@@ -1,0 +1,71 @@
+//#! tooltip = Moves Sliders (Automatic)
+//#! name = Slider
+//#! uniq = sliderz
+//#! icon = gfx/invobjs/glass-winee
+//life, night, civil, nature, martial, change
+
+
+   function main() {
+   jDropLastWindow();
+   var blist = ["Death", "Life", "Night", "Day", "Barbarism", "Civilization", "Nature", "Industry", "Martial", "Peaceful", "Tradition", "Change", "Exit"];
+   var selectWindow = jGUIWindow(jCoord(250, 250), jCoord(280, blist.length * 25 + 35), "Solaris Auto Slider");
+   var label = jGUILabel(selectWindow, jCoord(5, 5), "Select which belief you wish to advance.");
+   var label = jGUILabel(selectWindow, jCoord(5, 17), "When the time comes, the slider will move automatically.");
+   for(var i = 0; i < blist.length; i++)
+      jGUIButton(selectWindow, jCoord(5, 40 + i*25),  270, blist[i]);
+   selectWindow.toggleCloseButton();
+   var btext = selectWindow.waitButtonClick();
+   selectWindow.destroy();
+   if(btext == blist[0]) while (1) {
+   jBuyBelief("life", "-1");
+   jSleep(60000); 
+   }
+   if(btext == blist[1]) while (1) {
+   jBuyBelief("life", "1"); 
+   jSleep(60000);
+   }
+   if(btext == blist[2]) while (1) {
+   jBuyBelief("night", "-1"); 
+   jSleep(60000);
+   }
+   if(btext == blist[3]) while (1) {
+   jBuyBelief("night", "1"); 
+   jSleep(60000);
+   }
+   if(btext == blist[4]) while (1) {
+   jBuyBelief("civil", "-1"); 
+   jSleep(60000);
+   }
+   if(btext == blist[5]) while (1) {
+   jBuyBelief("civil", "1"); 
+   jSleep(60000);
+   }
+   if(btext == blist[6]) while (1) {
+   jBuyBelief("nature", "-1"); 
+   jSleep(60000);
+   }
+   if(btext == blist[7]) while (1) {
+   jBuyBelief("nature", "1"); 
+   jSleep(60000);
+   }
+   if(btext == blist[8])  while (1) {
+   jBuyBelief("martial", "-1"); 
+   jSleep(60000);
+   }
+   if(btext == blist[9]) while (1) {
+   jBuyBelief("martial", "1"); 
+   jSleep(60000);
+   }
+   if(btext == blist[10]) while (1) {
+   jBuyBelief("change", "-1"); 
+   jSleep(60000);
+   }
+   if(btext == blist[11]) while (1) {
+   jBuyBelief("change", "1"); 
+   jSleep(60000);
+   }
+
+   if(btext == blist[blist.length - 1]) {selectWindow.destroy(); return;};
+   }
+   
+   main();

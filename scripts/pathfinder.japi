@@ -1,0 +1,118 @@
+function getRandomArbitary(min, max){
+  return Math.random() * (max - min) + min;
+}
+
+function jPFMove_LX(point) {
+   point = jTilify(point);
+   var MyX = jMyCoords().x;
+   var MyY = jMyCoords().y;
+   if (jIsPathFree(point)) jAbsClick(point, 1, 0);
+   else jPFMove(point);
+   cycles = 0;
+   wcontinue = true;
+   while (wcontinue) {
+      wcontinue = MyX != point.x || MyY != point.y;
+      var thismessage = point;
+      if (lastmessage != null )
+         if (thismessage !=lastmessage)
+            jPrint("jPFMove_LX My =" + MyX + " " + MyY + " - " + point.x + " " + point.y);
+      var lastmessage = point;
+      jSleep(1000);
+      MyX = jMyCoords().x;
+      MyY = jMyCoords().y;
+      if(cycles == 6) { 
+         if (lastmessage != null )
+         if (thismessage !=lastmessage)     
+         jPrint("jPFMove_LX trying to move again");
+         jOffsetClick(jCoord(getRandomArbitary(-2,2),getRandomArbitary(-2,2)),1,0);
+         jSleep(500);
+         if (!jIsPathFree(point)) jPFMove(point);
+		 else jAbsClick(point, 1, 0);
+         cycles = 0
+         wcontinue = false;
+      }
+      cycles++;
+   }
+   jPrint("jPFMove ended");
+}
+
+function jPFMoveOffset_LX(point, offset) {
+   if (offset == null) offset = 1;
+
+   offsMoveS=jCoord(0,offset);
+   offsMoveE=jCoord(offset,0);
+   offsMoveW=jCoord(-offset,0);
+   offsMoveN=jCoord(0,-offset);
+   
+   while (1){
+try   {
+   /*
+	if (jIsPathFree(point.add(offsMoveS.mul(11)))) {
+		jAbsClick(point, 1, 0);
+		return offsMoveS;
+		}
+	if (jIsPathFree(point.add(offsMoveE.mul(11)))) {
+		jAbsClick(point, 1, 0);
+		return offsMoveE;
+		}
+	if (jIsPathFree(point.add(offsMoveW.mul(11)))) {
+		jAbsClick(point, 1, 0);
+		return offsMoveW;
+		}
+	if (jIsPathFree(point.add(offsMoveN.mul(11)))) {
+		jAbsClick(point, 1, 0);
+		return offsMoveN;
+		}
+   */
+      if(jPFMove(point.add(offsMoveS.mul(11))) > 0) {
+         jPFMove_LX(point.add(offsMoveS.mul(11)));
+		return offsMoveS;
+      }
+      
+      if(jPFMove(point.add(offsMoveE.mul(11))) > 0) {
+         jPFMove_LX(point.add(offsMoveE.mul(11)));
+      return offsMoveE;
+      }
+      
+      if(jPFMove(point.add(offsMoveW.mul(11))) > 0) {
+         jPFMove_LX(point.add(offsMoveW.mul(11)));
+      return offsMoveW;
+      }   
+      
+      if(jPFMove(point.add(offsMoveN.mul(11))) > 0) {
+         jPFMove_LX(point.add(offsMoveN.mul(11)));
+      return offsMoveN;
+      }
+      var thismessage = [point, offset];
+      if (lastmessage != null )
+         if (thismessage[1] != lastmessage[1] || thismessage[2] != lastmessage[2])
+            jPrint("jPFMoveOffset_LX can't find path to " + point + " offset " + offset);
+      var lastmessage = [point, offset];
+	  if ( (point.x - jMyCoords().x > 550) || (point.x - jMyCoords().x < -550) || (point.y - jMyCoords().y > 550) || (point.y - jMyCoords().y < -550) ) { // Point is off screen
+		jPrint("Point is off screen");
+		return -1;
+		}
+//      break;
+
+         jOffsetClick(jCoord(getRandomArbitary(-2,2),getRandomArbitary(-2,2)),1,0);
+         jSleep(500);
+      
+   }
+   catch(e) {
+	jPrint(e);
+   }
+}
+}
+
+
+function waitPFEndMove(){
+	jWaitStartMove(300);
+	jSleep(100);
+	while (true) {
+		jWaitEndMove(10000);
+		jSleep(200);
+		if (!jIsMoving()) {
+			return;
+		}
+	}
+}

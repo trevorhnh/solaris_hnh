@@ -1,0 +1,1104 @@
+var actionTimeout = 1000 * 60 * 1;
+
+function waitUnActual(item) {
+	while (item.isActual()) {
+		jSleep(100);
+	}
+}
+
+function resetCursor() {
+	if (!jIsCursor("arw")) {
+		jAbsClick(jCoord(0, 0), 3, 0);
+		jWaitCursor("arw", actionTimeout);
+	}
+}
+
+function checkInventory() {
+	if(!jHaveWindow("Inventory")) {
+		jToggleInventory();
+		while(!jHaveWindow("Inventory"))
+			jSleep(100);
+	}
+	return jGetWindow("Inventory").getInventories()[0];
+}
+
+function checkEquipment() {
+	if(!jHaveWindow("Equipment")) {
+		jToggleEquipment();
+		while(!jHaveWindow("Equipment"))
+			jSleep(100);
+	}
+	return jGetJSEquip();
+}
+
+function waitInventoryObject(inv, objname) {
+	while (true) {
+		var objs = inv.getItems(objname);
+		if (objs.length > 0) break;
+		else jSleep(100);
+	}	
+}
+
+function drinkWater() {
+	var inventory = checkInventory();
+	var buckets = inventory.getItems("bucket-water");
+	if (buckets.length > 0) {
+		inventory.sortItems(buckets, "amount", false);
+		var bucket = buckets[0];
+		var bucket_coord = bucket.coord();
+		if (bucket.isActual()) {
+			bucket.take();
+			jWaitDrag();
+			var flasks = inventory.getItems("waterflask", "waterskin");
+			if (flasks.length > 0) {
+				var flask = flasks[0];
+				if (flask.isActual()) {
+					flask.itemact(0);
+					jSleep(500);
+					inventory.drop(bucket_coord);
+					jWaitDrop();
+				}
+			}
+		}
+	}
+	var flasks = inventory.getItems("waterflask", "waterskin");
+	if (flasks.length > 0) {
+		var flask = flasks[0];
+		if (flask.isActual()) {
+			flask.iact();
+			if (jWaitPopup(actionTimeout)) {
+				jSelectContextMenu("Drink");
+				jWaitProgress();
+			}
+		}
+	}
+}
+
+function dropItem(coord) {
+	var items = checkInventory().getItems("");
+	for (var i = 0; i < items.length; i++) {
+		if (items[i].coord().x == coord.x && items[i].coord().y == coord.y) { 
+			items[i].drop();
+			break;
+		}
+	}	
+}
+
+function waitDragName(name) {
+	while (true) {
+		// Unsafe
+		try {
+			var item = jGetDraggingItem();
+			if (item != null && item.isActual()) {
+				if (item.resName() != null) {
+					if (item.resName().indexOf(name) >= 0) {
+						break;
+					} else {
+						jSleep(100);
+					}
+				} else jSleep(100);
+			} else {
+				break;
+			}
+		} catch (ex) {
+			jSleep(200);
+		}
+	}
+}
+
+function waitPFEndMove() {
+	while (true) {
+		jWaitEndMove();
+		jSleep(500);
+		if (!jIsMoving()) {
+			return;
+		}
+	}
+}
+
+function travelCount() {
+	var buffs = jGetBuffs();
+	for (var i = 0; i < buffs.length; i++) {
+		if (buffs[i].name().indexOf("Travel Weariness") >= 0) {
+			return buffs[i].meter();
+		}
+	}
+	return 0;
+}
+
+function noMoreWine() {
+	var buffs = jGetBuffs();
+	for (var i = 0; i < buffs.length; i++) {
+		if (buffs[i].name().indexOf("Drunk and Riotous") >= 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function _pf_click(id) {
+	if (!jIsPathFree(jGob(id).position())) {
+		resetCursor();
+		if (jPFClick(id) > 0) {
+			if (jWaitStartMove(1000)) {
+				waitPFEndMove();
+				while (jIsMoving() || jMyCoords().dist(jGob(id).position()) > 33) {
+					jSleep(100);
+				}
+				return true;
+			}
+		}
+	} else {
+		resetCursor();
+		jGob(id).doClick(3, 0);
+	}
+	return false;
+}
+
+function _pf_move(coord) {
+	if (!jIsPathFree(coord)) {
+		resetCursor();
+		if (jPFMove(coord) > 0) {
+			if (jWaitStartMove(1000)) {
+				waitPFEndMove();
+				while (jIsMoving() || jMyCoords().dist(coord) > 1) {
+					jSleep(100);
+				}
+				return true;
+			}
+		}
+	} else {
+		resetCursor();
+		jAbsClick(coord, 1, 0);
+		if (jWaitStartMove(1000)) {
+			jWaitEndMove();
+			return true;
+		}
+	}
+	return false;
+}
+
+function dropAll() {
+	if (jIsDragging()) {
+		jDropObject(0);
+		jWaitDrop(actionTimeout);
+	}
+}
+
+function waitChat(name, timeout) {
+	var time = 0;
+	while (true) {
+		var chats = haven.getChats();
+		for (var i = 0; i < chats.length; i++) {
+			if (chats[i].chatName().indexOf(name) >= 0) {
+				return true;
+			}
+		}
+		jSleep(100);
+		time += 100;
+		if (time > timeout) return false;
+	}
+}
+
+// Говорит текст в ареа чат
+function sayArea(text)
+{
+	var chats = jGetChats();
+	for (var i = 0; i < chats.length; i++)
+	{
+		if (chats[i].chatName().indexOf("Area Chat") >= 0)
+		{
+			chats[i].sendMessage(text);
+			break;
+		}
+	}
+}
+// Говорит текст в деревенский чат
+function sayVillage(text)
+{
+	var chats = jGetChats();
+	for (var i = 0; i < chats.length; i++)
+	{
+		if (chats[i].chatName().indexOf("Village") >= 0)
+		{
+			chats[i].sendMessage(text);
+			break;
+		}
+	}
+}
+
+function dropAll() {
+	if (jIsDragging()) {
+		jDropObject(0);
+		jWaitDrop(actionTimeout);
+	}
+}
+
+function dropItem(coord) {
+	var inventory = checkInventory();
+	var items = inventory.getItems("");
+	for (var i = 0; i < items.length; i++) {
+		if (items[i].coord().x == coord.x && items[i].coord().y == coord.y) { 
+			items[i].drop();
+			break;
+		}
+	}	
+}
+
+function moveFromObject(objid, tiles) {
+	var direction = jGob(objid).position().sub(jMyCoords());
+	var direction_normal = direction.div(direction.abs());
+	resetCursor();
+	jAbsClick(jGob(objid).position().sub(direction_normal.mul(tiles, tiles)), 1, 0);
+	jWaitMove(actionTimeout);
+}
+
+function travelCount() {
+	var buffs = jGetBuffs();
+	for (var i = 0; i < buffs.length; i++) {
+		if (buffs[i].name().indexOf("Travel Weariness") >= 0) {
+			return buffs[i].meter();
+		}
+	}
+	return 0;
+}
+
+function noMoreWine() {
+	var buffs = jGetBuffs();
+	for (var i = 0; i < buffs.length; i++) {
+		if (buffs[i].name().indexOf("Drunk and Riotous") >= 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function drinkWine() {
+	var inventory = checkInventory();
+	var buckets = inventory.getItems("bucket-wine");
+	if (buckets.length > 0) {
+		inventory.sortItems(buckets, "amount", false);
+		var bucket = buckets[0];
+		var bucket_coord = bucket.coord();
+		if (bucket.isActual()) {
+			bucket.take();
+			jWaitDrag(actionTimeout);
+			var flasks = inventory.getItems("glass-wine");
+			if (flasks.length > 0) {
+				var flask = flasks[0];
+				if (flask.isActual()) {
+					flask.itemact(0);
+					jSleep(500);
+					inventory.drop(bucket_coord);
+					jWaitDrop(actionTimeout);
+				}
+			}
+		}
+	}
+	var flasks = inventory.getItems("glass-wine");
+	if (flasks.length > 0) {
+		var flask = flasks[0];
+		if (flask.isActual()) {
+			flask.iact();
+			if (jWaitPopup(actionTimeout)) {
+				jSelectContextMenu("Drink");
+				jWaitProgress(actionTimeout);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+// IGNORE
+var _ignore_array = new Array();
+
+function addIgnoreId(id) {
+	_ignore_array.push(id);
+}
+
+function removeIgnoreId(id) {
+	
+}
+
+function clearIgnoreList() {
+	_ignore_array = [];
+}
+
+function iGetObjects(radius, offset, name) {
+	var objs = jGetObjects(radius, offset, name);
+	var ret = new Array();
+	for (var i = 0; i < objs.length; i++) {
+		if (_ignore_array.indexOf(objs[i]) == -1) {
+			ret.push(objs[i]);
+		}
+	}
+	return ret;
+}
+
+function iGetNearestObject(radius, name) {
+	var objs = iGetObjects(radius, jCoord(0, 0), name);
+	var min_len = 100500; var obj = 0;
+	for (var i = 0; i < objs.length; i++) {
+		if (jGob(objs[i]).position().dist(jMyCoords()) < min_len) {
+			obj = objs[i];
+			min_len = jGob(objs[i]).position().dist(jMyCoords());
+		}
+	}
+	return obj;
+}
+
+
+
+
+
+//////////////////////////////////////////////
+// cdev
+//////////////////////////////////////////////
+
+// village unload
+function VillageUnload()
+{
+	// drink wine
+	// tp totem
+	// hunger from overstuffed
+	// find all chests in 20 sq
+	// get random
+	// go with patfinding
+	// if failed - go next or tp to totem
+	// unload
+	// repeat until all unloaded
+	// if no chests - stop
+	// logoff
+}
+
+function CheckHostile()
+{
+	if (jFindObjectByName("kritter/bear", 75) != null) return true;
+	if (jFindObjectByName("kritter/boar", 65) != null) return true;
+
+	// humans
+	var objList = jGetObjects(75, jCoord(0, 0), "gfx/borka/s");
+	for (var n = 0; n < objList.length; n++)
+	{
+		var enemy = objList[n];
+		if (!enemy.isActual()) continue;
+
+		var isPlayer = enemy.isPlayer();
+		var inVillage = enemy.isInYourVillage();
+		var isKin = enemy.isKin();
+		var kinGroup = enemy.getKinGroup();
+
+		if (enemy.getID() == jGetMyID()) continue;
+		if (!isPlayer) continue;
+		if (inVillage) continue;
+		if (isKin)
+		{
+			if (kinGroup == 1) continue; // green kin
+		}
+		return true;
+	}
+	return false;
+}
+
+function Random(min, max)
+{
+	return Math.floor((Math.random()*(max-min)) + min);
+}
+
+var moveTimeout = 60*1000;
+
+function WaitMoveAndCheckHostile()
+{
+	if (CheckHostile())	return false;
+//	jWaitMove(actionTimeout);
+	jWaitMove(moveTimeout);
+	if (CheckHostile())	return false;
+	return true;
+}
+
+function MoveRandomDirection(dist)
+{
+	dx = Random(-dist, dist);
+	dy = Random(-dist, dist);
+	jMoveStep(jCoord(dx, dy));
+	return WaitMoveAndCheckHostile();
+}
+function MoveToPosDelta(pos, delta)
+{
+	while (true)
+	{
+		jAbsClick(pos, 1, 0);
+		if (!WaitMoveAndCheckHostile()) return false;
+		var curPos = jMyCoords();
+		if ((Math.abs(curPos.x-pos.x) <= delta)&&(Math.abs(curPos.y-pos.y) <= delta)) break;
+
+		// to enter claim
+		jAbsClick(pos, 1, 0);
+		if (!WaitMoveAndCheckHostile()) return false;
+		curPos = jMyCoords();
+		if ((Math.abs(curPos.x-pos.x) <= delta)&&(Math.abs(curPos.y-pos.y) <= delta)) break;
+
+		jSleep(300);
+		if (!MoveRandomDirection(4)) return false;
+	}
+	return true;
+}
+function MoveToPos(pos)
+{
+	return MoveToPosDelta(pos, 3);
+}
+
+function MoveRandomDirectionSafe(dist)
+{
+	dx = Random(-dist, dist);
+	dy = Random(-dist, dist);
+	jMoveStep(jCoord(dx, dy));
+//	jWaitMove(actionTimeout);
+	jWaitMove(moveTimeout);
+}
+function MoveToPosSafeDelta(pos, delta)
+{
+	while (true)
+	{
+		jAbsClick(pos, 1, 0);
+//		jWaitMove(actionTimeout);
+		jWaitMove(moveTimeout);
+		var curPos = jMyCoords();
+		if ((Math.abs(curPos.x-pos.x) <= delta)&&(Math.abs(curPos.y-pos.y) <= delta)) break;
+
+		// to enter claim
+		jAbsClick(pos, 1, 0);
+//		jWaitMove(actionTimeout);
+		jWaitMove(moveTimeout);
+		curPos = jMyCoords();
+		if ((Math.abs(curPos.x-pos.x) <= delta)&&(Math.abs(curPos.y-pos.y) <= delta)) break;
+
+		jSleep(300);
+		MoveRandomDirectionSafe(4);
+	}
+}
+function MoveToPosSafe(pos)
+{
+	MoveToPosSafeDelta(pos, 3);
+}
+
+function CollectCurio(curio)
+{
+	if (curio == null) return;
+
+	var startPos = jMyCoords();
+
+	// move to curio
+	if (!MoveToPos(curio.position())) return false;
+
+	// take
+	curio.doClick(3, 0);
+	jWaitPopup(actionTimeout);
+	if (jHavePopup())
+	{
+		jSelectContextMenu("Pick");
+		jWaitProgress(actionTimeout);
+	}
+
+	// return
+	if (!MoveToPos(startPos)) return false;
+	return true;
+}
+
+function DropCurios(curioName, minKeepQuality)
+{
+	var inventory = checkInventory();
+	var items = inventory.getItems(curioName);
+	for (var i = 0; i < items.length; i++)
+	{
+		if (items[i].quality() < minKeepQuality) items[i].drop();
+	}	
+}
+
+function TeleportHF()
+{
+	jSendDoubleAction("theTrav", "hearth");
+	jWaitProgress(actionTimeout);
+	while (true)
+	{
+		if (jFindObjectByName("hearth-play", 1) != null) break;
+		jSleep(1000);
+	}
+}
+
+function WaitRespawn()
+{
+//	jSleep(17*60*1000 + 30*1000 + 6*60*1000);
+	jSleep(17*60*1000 + 30*1000);
+}
+
+function Login(iaccName, icharName)
+{
+	while (true)
+	{
+		jLogin(iaccName);
+		jSleep(2000);
+		if (jHaveCharlist()) break;
+	}
+
+	while (true)
+	{
+		if (jSelectChar(icharName)) break;
+		jSleep(2000);
+	}
+
+	while (!jHaveWindow(icharName))
+	{
+		jSleep(2000);
+		if (jHaveWindow("Menu"))
+		{
+			jSleep(1000);
+	  	return;
+		}
+	}
+	jSleep(1000);
+
+	jGetWindow(icharName).pushButton("Your hearth fire");
+
+	while (!jHaveWindow("Menu"))
+	{
+		jSleep(2000);
+	}
+	jSleep(1000);
+}
+
+function CollectSwamp(iaccName, icharName, icollectCurios, idropCurios, istartPos, iwaypoints)
+{ // legacy
+	var dropQuality = [];
+	for (var i = 0; i < idropCurios; i++)
+	{
+		dropQuality[i] = 200;
+	}
+	CollectSwamp2(iaccName, icharName, icollectCurios, idropCurios, dropQuality, istartPos, iwaypoints);
+}
+function CollectSwamp2(iaccName, icharName, icollectCurios, idropCurios, idropQuality, istartPos, iwaypoints)
+{
+	while(1)
+	{
+		jDropLastWindow();
+
+		jSendAction("crime");
+		jSetSpeed(0);
+		TeleportHF();
+
+		var initPos = jMyCoords();
+
+		evacuate:
+		for (var i = 0; i < iwaypoints.length; i++)
+		{
+			if (!MoveToPos(jCoord(initPos.x + (iwaypoints[i][0] - istartPos.x)*11, initPos.y + (iwaypoints[i][1] - istartPos.y)*11))) break evacuate;
+
+			//////////////////////////////////////////////////////////
+			while (true)
+			{
+				var curio;
+				for(var n = 0; n < icollectCurios.length; n++)
+				{
+					curio = jFindObjectByName(icollectCurios[n], 40);
+					if (curio != null) break;
+				}
+
+				if (curio == null) break;
+				if (!CollectCurio(curio)) break evacuate;
+
+				for(var k = 0; k < idropCurios.length; k++)
+				{
+					DropCurios(idropCurios[k], idropQuality[k]);
+				}
+
+				var inventory = checkInventory();
+				if (inventory.freeSlots() == 0)
+				{
+					// TODO: maybe unload	to cupboards here
+					jLogout();
+					jExit();
+				} 
+			}
+			//////////////////////////////////////////////////////////
+
+		}
+
+		jLogout();
+		WaitRespawn();
+		Login(iaccName, icharName);
+	}
+}
+
+function CollectMount(iaccName, icharName, icollectCurios, idropCurios, istartPos, iwaypoints)
+{ // legacy
+	var dropQuality = [];
+	for (var i = 0; i < idropCurios; i++)
+	{
+		dropQuality[i] = 200;
+	}
+	CollectMount2(iaccName, icharName, icollectCurios, idropCurios, dropQuality, istartPos, iwaypoints);
+}
+function CollectMount2(iaccName, icharName, icollectCurios, idropCurios, idropQuality, istartPos, iwaypoints)
+{
+	while(1)
+	{
+		jDropLastWindow();
+
+		jSendAction("crime");
+		jSetSpeed(0);
+		TeleportHF();
+
+		var initPos = jMyCoords();
+
+		evacuate:
+		for (var i = 0; i < iwaypoints.length; i++)
+		{
+			if (!MoveToPos(jCoord(initPos.x + (iwaypoints[i][0] - istartPos.x)*11, initPos.y + (iwaypoints[i][1] - istartPos.y)*11))) break evacuate;
+
+			//////////////////////////////////////////////////////////
+			for(var n = 0; n < icollectCurios.length; n++)
+			{
+				// get all visible curios list
+				var curiosList = jGetObjects(40, jCoord(0, 0), icollectCurios[n]);
+				for (var s = 0; s < curiosList.length; s++)
+				{
+					var curio = curiosList[s];
+
+					// check curio path
+					var isPathFree = jIsPathFree(curio.position());
+					if (!isPathFree) continue;
+
+					if (curio == null) break;
+					if (!CollectCurio(curio)) break evacuate;
+
+					for(var k = 0; k < idropCurios.length; k++)
+					{
+						DropCurios(idropCurios[k], idropQuality[k]);
+					}
+
+					var inventory = checkInventory();
+					if (inventory.freeSlots() == 0)
+					{
+						// TODO: maybe unload	to cupboards here
+						jLogout();
+						jExit();
+					} 
+				}
+			}
+			//////////////////////////////////////////////////////////
+
+		}
+
+		jLogout();
+		WaitRespawn();
+		Login(iaccName, icharName);
+	}
+}
+
+var myBoat = null;
+
+function PutBoat()
+{
+	var me = jGob(jGetMyID());
+	if(me == null) return;
+	if(!me.isCarrying()) return;
+	jAbsClick(jMyCoords().add(0, 22), 3, 0);
+	while(me.isCarrying())
+	{
+		jSleep(1000);
+	}
+}
+function TakeBoat()
+{
+	var me = jGob(jGetMyID());
+	var boat = jFindObjectByName("boat", 10);
+	if (boat == null) return false;
+	jSendAction("carry");
+	jWaitCursor("chi", actionTimeout);
+	boat.doClick(1, 0);
+	while (!me.isCarrying())
+	{
+		jSleep(1000);
+	}
+	myBoat = boat;
+	return true;
+}
+
+function PutBoatOnLake(ipos)
+{
+	var me = jGob(jGetMyID());
+	jAbsClick(ipos, 3, 0);
+	while (me.isCarrying())
+	{
+		jSleep(1000);
+	}
+	myBoat = jFindObjectByName("boat", 2);
+}
+function GetIntoBoat()
+{
+	myBoat.doClick(3, 0);
+	jWaitPopup(actionTimeout);
+	jSelectContextMenu("Avast!");
+	var me = jGob(jGetMyID());
+	while (!me.isSitting())
+	{
+		jSleep(1000);
+	}
+}
+
+function GetFromBoatAndTakeIt()
+{
+	jAbsClick(jMyCoords().add(0, -33), 1, 2);
+	var me = jGob(jGetMyID());
+	while (me.isSitting())
+	{
+		jSleep(1000);
+	}
+	jSendAction("carry");
+	jWaitCursor("chi", actionTimeout);
+	myBoat.doClick(1, 0);
+	while (!me.isCarrying())
+	{
+		jSleep(1000);
+	}
+}
+
+function CollectCurioLake(icurio)
+{
+	if (icurio == null) return;
+	var startPos = jMyCoords();
+
+	jAbsClick(icurio.position(), 1, 0);
+	jWaitMoveGob(myBoat.getID(), actionTimeout);
+	
+	var curPos = jMyCoords();
+	if ((Math.abs(curPos.x-icurio.position().x) <= 2)&&(Math.abs(curPos.y-icurio.position().y) <= 2))
+	{
+		icurio.doClick(3, 0);
+		jWaitPopup(actionTimeout);
+		if (jHavePopup())
+		{
+			jSelectContextMenu("Pick");
+			jWaitProgress(actionTimeout);
+		}
+	}
+
+	jAbsClick(startPos, 1, 0);
+	jWaitMoveGob(myBoat.getID(), actionTimeout);
+}
+
+function CollectLake(iaccName, icharName, icollectCurios, idropCurios, istartPos, iwaypoints)
+{ // legacy
+	var dropQuality = [];
+	for (var i = 0; i < idropCurios; i++)
+	{
+		dropQuality[i] = 200;
+	}
+	CollectLake2(iaccName, icharName, icollectCurios, idropCurios, dropQuality, istartPos, iwaypoints);
+}
+function CollectLake2(iaccName, icharName, icollectCurios, idropCurios, idropQuality, istartPos, iwaypoints)
+{
+	if (iwaypoints.length < 2)
+	{
+		jLogout();
+		jExit();
+	}
+
+	while(1)
+	{
+		jDropLastWindow();
+
+		if(!TakeBoat())
+		{
+			jLogout();
+			jExit();
+		}
+
+		TeleportHF();
+
+		initPos = jMyCoords();
+		var shoreBeginPos = jCoord(initPos.x + (iwaypoints[0][0] - istartPos.x)*11, initPos.y + (iwaypoints[0][1] - istartPos.y)*11);
+
+		PutBoatOnLake(shoreBeginPos);
+
+		GetIntoBoat();
+
+		for(var i = 1; i < iwaypoints.length; i++)
+		{
+			jAbsClick(jCoord(initPos.x + (iwaypoints[i][0] - istartPos.x)*11, initPos.y + (iwaypoints[i][1] - istartPos.y)*11), 1, 0);
+			jWaitMoveGob(myBoat.getID(), actionTimeout);
+
+
+			//////////////////////////////////////////////////////////
+			for(var n = 0; n < icollectCurios.length; n++)
+			{
+				// get all visible curios list
+				var curiosList = jGetObjects(45, jCoord(0, 0), icollectCurios[n]);
+				for (var s = 0; s < curiosList.length; s++)
+				{
+					var inventory = checkInventory();
+					if (inventory.freeSlots() == 0) break;
+
+					var curio = curiosList[s];
+
+					if (curio == null) break;
+					CollectCurioLake(curio);
+
+					for(var k = 0; k < idropCurios.length; k++)
+					{
+						DropCurios(idropCurios[k], idropQuality[k]);
+					}
+				}
+			}
+			//////////////////////////////////////////////////////////
+		}
+
+		GetFromBoatAndTakeIt();
+
+		TeleportHF();
+
+		PutBoat();
+
+		var inventory = checkInventory();
+		if (inventory.freeSlots() == 0)
+		{
+			// TODO: maybe unload	to cupboards here
+			jLogout();
+			jExit();
+		} 
+
+		jLogout();
+		WaitRespawn();
+		Login(iaccName, icharName);
+	}
+}
+
+function CollectShocked(iaccName, icharName, icollectCurios, idropCurios, idropQuality, istartPos, iwaypoints)
+{
+	var droppedToadsCount = 0;
+
+	while(1)
+	{
+		jDropLastWindow();
+
+		jSendAction("crime");
+		jSetSpeed(0);
+		TeleportHF();
+
+		var initPos = jMyCoords();
+
+		evacuate:
+		for (var i = 0; i < iwaypoints.length; i++)
+		{
+			if (!MoveToPos(jCoord(initPos.x + (iwaypoints[i][0] - istartPos.x)*11, initPos.y + (iwaypoints[i][1] - istartPos.y)*11))) break evacuate;
+
+			//////////////////////////////////////////////////////////
+			while (true)
+			{
+				var curio;
+				for(var n = 0; n < icollectCurios.length; n++)
+				{
+					curio = jFindObjectByName(icollectCurios[n], 40);
+					if (curio != null) break;
+				}
+
+				if (curio == null) break;
+				if (!CollectCurio(curio)) break evacuate;
+
+				for(var k = 0; k < idropCurios.length; k++)
+				{
+					DropCurios(idropCurios[k], idropQuality[k]);
+				}
+
+				var inventory = checkInventory();
+				if (inventory.freeSlots() == 0)
+				{
+					// TODO: maybe unload	to cupboards here
+					jLogout();
+					jExit();
+				} 
+			}
+			//////////////////////////////////////////////////////////
+
+			//////////////////////////////////////////////////////////
+			var startPos = jMyCoords();
+
+			var frogsList = jGetObjects(40, jCoord(0, 0), "rat");
+			var frogsCount = frogsList.length;
+			while (true)
+			{
+				//if (frogsCount == 0) break;
+				var hasActual = false;
+				for (var s = 0; s < frogsCount; s++)
+				{
+					if (frogsList[s] == null) continue;
+					if (!frogsList[s].isActual()) continue;
+					hasActual = true;
+					break;
+				}
+				if (!hasActual) break;
+	
+				var curPos = jMyCoords();
+				var minDist = 1000000000;
+				var nearestFrog = -1;
+				for (var s = 0; s < frogsCount; s++)
+				{
+					if (frogsList[s] == null) continue;
+					if (!frogsList[s].isActual()) continue;
+					var frogPos = frogsList[s].position();
+					var frogDist = (curPos.x-frogPos.x)*(curPos.x-frogPos.x) + (curPos.y-frogPos.y)*(curPos.y-frogPos.y);
+					if (frogDist < minDist)
+					{
+						minDist = frogDist;
+						nearestFrog = s;
+					}
+				}
+				if (nearestFrog == -1) break;
+				var frog = frogsList[nearestFrog];
+				frogsCount = frogsCount - 1;
+				frogsList[nearestFrog] = frogsList[frogsCount];
+
+				if (!frog.isActual()) continue;
+				if (frog.isMoving()) continue;
+
+				var startFrogPos = frog.position();
+
+				// move to frog
+				if (!MoveToPos(startFrogPos)) break evacuate;
+				
+				if (!frog.isActual()) continue;
+				if ((frog.position().x == startFrogPos.x)&&(frog.position().y == startFrogPos.y))
+				{
+					// take
+					if (!frog.isActual()) continue;
+					frog.doClick(3, 0);
+					jSleep(1000);
+				}
+				else
+				{
+					if (!frog.isActual()) continue;
+					if ((Math.abs(frog.position().x - startFrogPos.x) < 8*11) && (Math.abs(frog.position().y - startFrogPos.y) < 8*11)) //  && (!frog.isMoving())
+					{
+						// take
+						if (!frog.isActual()) continue;
+						frog.doClick(3, 0);
+						jSleep(8000);
+					}
+				}
+
+				// drop toads, keep shockeds
+				var inventory = checkInventory();
+				var items = inventory.getItems("frog");
+				for (var s = 0; s < items.length; s++)
+				{
+					if (items[s].name() == "Toad")
+					{
+						droppedToadsCount = droppedToadsCount + 1;
+						jPrint("toads dropped = "+droppedToadsCount);
+
+						items[s].drop();
+					}
+				}	
+				// drop rats, dragonflies
+				//DropCurios("rat", 200);
+
+				if (inventory.freeSlots() == 0)
+				{
+					// TODO: maybe unload	to cupboards here
+					jLogout();
+					jExit();
+				} 
+			}
+
+			// return
+			if (!MoveToPos(startPos)) break evacuate;
+			//////////////////////////////////////////////////////////
+		}
+
+		jLogout();
+		WaitRespawn();
+		Login(iaccName, icharName);
+	}
+}
+
+function CheckRams(iaccName, icharName, icollectCurios, idropCurios, idropQuality, istartPos, iwaypoints)
+{
+	jDropLastWindow();
+
+	jSendAction("crime");
+	jSetSpeed(1);
+	TeleportHF();
+
+	var allClear = true;
+	var initPos = jMyCoords();
+	for (var i = 0; i < iwaypoints.length; i++)
+	{
+		MoveToPosSafe(jCoord(initPos.x + (iwaypoints[i][0] - istartPos.x)*11, initPos.y + (iwaypoints[i][1] - istartPos.y)*11));
+
+		var objList = jGetObjects(75, jCoord(0, 0), "/");
+		for (var n = 0; n < objList.length; n++)
+		{
+			var enemy = objList[n];
+			if (!enemy.isActual()) continue;
+			if (enemy.name() == "gfx/kritter/bram/s")
+			{
+				allClear = false;
+				var hfOffsetTiles = jCoord((enemy.position().x - initPos.x)/11, (enemy.position().y - initPos.y)/11);
+				var hfOffsetMMaps = jCoord(hfOffsetTiles.x/100, hfOffsetTiles.y/100);
+				jPrint("RAM DETECTED !!! Offset from hf = "+hfOffsetMMaps+" minimaps");
+ 				sayVillage("ALARM !!! ALARM !!! ALARM !!!");
+ 				sayVillage("RAM DETECTED !!! RAM DETECTED !!!");
+ 				sayVillage("Offset from hf <"+icharName+"> = "+hfOffsetMMaps+" minimaps");
+ 				sayVillage("ALARM !!! ALARM !!! ALARM !!!");
+			}
+			if (enemy.name() == "gfx/borka/s")
+			{
+				var isPlayer = enemy.isPlayer();
+				var inVillage = enemy.isInYourVillage();
+				var isKin = enemy.isKin();
+				var kinGroup = enemy.getKinGroup();
+				var isAggroed = jYouAggroedId(enemy.getID());
+
+				if (enemy.getID() == jGetMyID()) continue;
+				if (!isPlayer) continue;
+				if (inVillage) continue;
+				if (isKin)
+				{
+					if (kinGroup == 1) continue; // green kin
+				}
+
+				allClear = false;
+
+				var hfOffsetTiles = jCoord((enemy.position().x - initPos.x)/11, (enemy.position().y - initPos.y)/11);
+				var hfOffsetMMaps = jCoord(hfOffsetTiles.x/100, hfOffsetTiles.y/100);
+
+				jPrint("Suspicious guy detected!!! Offset from hf = "+hfOffsetMMaps+" minimaps");
+
+ 				sayVillage("WARNING !!!");
+				sayVillage("Suspicious guy detected!!!");
+ 				sayVillage("Offset from hf <"+icharName+"> = "+hfOffsetMMaps+" minimaps");
+
+				if (isAggroed)
+				{
+					jPrint("He aggroed me!!!");
+					sayVillage("He aggroed guard <"+icharName+"> !!!");
+				}
+ 				sayVillage("WARNING !!!");
+			}
+		}
+	}
+
+	if (allClear)
+	{
+		jPrint("Check finished. All clear.");
+	}
+	else
+	{
+		jPrint("WARNING! Check finished. RAM OR ENEMIES DETECTED!!!");
+	}
+}
+
+//////////////////////////////////////////////
+// cdev end
+//////////////////////////////////////////////

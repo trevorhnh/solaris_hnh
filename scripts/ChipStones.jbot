@@ -1,0 +1,83 @@
+//#! uniq = CHIPSTONES
+//#! tooltip = Chip stones to sign
+//#! name = Chip stones
+//#! icon = gfx/invobjs/stone
+//---------------------------------------------------------------------
+include("jBotAPI");
+//---------------------------------------------------------------------
+var s = 0;
+var foodList = ["meat-cow", "cowchorizo", "wurst", "meat", "cheese"];
+var inv = checkInventory();
+//---------------------------------------------------------------------
+function EatFood(){
+	var fitems = inv.getItems(foodList);
+	if (fitems.length <= 0) return;
+	fitems[0].iact();
+	if (jWaitPopup(actionTimeout)) jSelectContextMenu("Eat");
+	while(fitems[0].isActual()) jSleep(150);
+}
+//---------------------------------------------------------------------
+function DropFromCursor(){
+	while (jIsDragging()){
+		jDropObject(0);
+		jSleep(300);
+	}
+}
+//---------------------------------------------------------------------
+function ChipStones(){
+	jSetSpeed(1);
+	var stones = [];
+	var i = 0;
+	var stone = jGetObjects(25, jCoord(0, 0), "bumlings");
+	stones = stone;
+	DropFromCursor();
+	if (jGetStamina() < 60) drinkWater();
+	if (jGetHungry() < 85) EatFood();
+	if (jGetHungry() < 52) Finish("too hungry.");
+	jPFClick(stones[i].getID(), 3 ,0);
+	jWaitPopup(actionTimeout);
+	jSleep(300);
+	if (jHavePopup()){
+		jSelectContextMenu("Chip stone");
+		jSleep(1500);
+	} 
+	while(jHaveHourglass()) {
+		jSleep(250);
+		if(checkInventory().freeSlots() < 2) {
+			DropFromCursor();
+			break;
+		}
+	}	
+}
+//---------------------------------------------------------------------
+function fillSign() {
+	jSetSpeed(2);
+	while(inv.getItems("stone").length != 0) {
+		var signs = jGetObjects(25, jCoord(0, 0), "sign");
+		jPFClick(signs[s].getID(), 3, 0);
+		while(!jHaveWindow("Milestone")) {jSleep(2500);}
+		if(jHaveWindow("Milestone")) {
+			var inside = jGetBuildValues("Milestone", 1).split("/")[0];
+			jSleep(500);
+			if(inside == 0) {s++;}
+			if(inside != 0) {
+				inv.getItems("stone")[0].transferSuchAll();
+				jSleep(2000);
+				var inside = jGetBuildValues("Milestone", 1).split("/")[0];
+				if(inv.getItems("stone").length == 0) {break;}
+				jSleep(2000);
+				if(inside == 0) {s++;}
+				else {break;}
+			}
+		}
+	}
+}
+//---------------------------------------------------------------------
+function main(){
+	while (true){
+		ChipStones();
+		fillSign();
+	}
+}
+//---------------------------------------------------------------------
+main();

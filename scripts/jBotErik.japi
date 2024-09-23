@@ -1,0 +1,202 @@
+function selectInRect_mouse(resname) {
+	jToConsole(resname);
+	jMoveStep(jCoord(0, 0));
+	var offs = jCoord(0, 0);
+	var space = jCoord(1, 1);
+	var confirm = false;
+
+	SelArea = jAreaSelector()
+	jDrawGroundRect(SelArea[2], SelArea[3]);
+	area = SelArea[3]
+	offs = SelArea[2]
+
+	jDrawGroundRect(offs, jCoord(0, 0));
+
+		var startCoord = jTilify(jMyCoords()).add(offs.mul(11));
+		var fieldSize = area;
+		var returns = [];
+		
+		for (var x = 0; x < area.x ; x++){
+			var hori = startCoord.x + (x * 11);
+			for (var y = 0; y < area.y ; y++) {
+				var verti = startCoord.y + (y * 11);
+				var object = jFindMapObjectNearAbs(jCoord(hori,verti), 1,resname);
+				//jPrint(jCoord(hori,verti));
+				if (object) {
+					var same = 1;
+					//jToConsole("Found one");
+					returns.push(object);
+					
+				}
+			}
+		}
+		jPrint("Object length is " + returns.length);
+	return returns;
+}
+
+function selectInRect_mouseHori(resname) {
+	jToConsole(resname);
+	jMoveStep(jCoord(0, 0));
+	var offs = jCoord(0, 0);
+	var space = jCoord(1, 1);
+	var confirm = false;
+
+	SelArea = jAreaSelector()
+	jDrawGroundRect(SelArea[2], SelArea[3]);
+	area = SelArea[3]
+	offs = SelArea[2]
+
+	jDrawGroundRect(offs, jCoord(0, 0));
+
+		var startCoord = jTilify(jMyCoords()).add(offs.mul(11));
+		var fieldSize = area;
+		var returns = [];
+		for (var y = 0; y < area.y ; y++) {
+				var verti = startCoord.y + (y * 11);
+				for (var x = 0; x < area.x ; x++){
+					var hori = startCoord.x + (x * 11);
+			
+				var object = jFindMapObjectNearAbs(jCoord(hori,verti), 1,resname);
+				//jPrint(jCoord(hori,verti));
+				if (object) {
+					var same = 1;
+					//jToConsole("Found one");
+					returns.push(object);
+					
+				}
+			}
+		}
+		jPrint("Object length is " + returns.length);
+	return returns;
+}
+function selectInRect_mouse_all(resname) {
+	jToConsole(resname);
+	jMoveStep(jCoord(0, 0));
+	var offs = jCoord(0, 0);
+	var space = jCoord(1, 1);
+	var confirm = false;
+
+	SelArea = jAreaSelector()
+	jDrawGroundRect(SelArea[2], SelArea[3]);
+	area = SelArea[3]
+	offs = SelArea[2]
+
+	jDrawGroundRect(offs, jCoord(0, 0));
+
+		var startCoord = jTilify(jMyCoords()).add(offs.mul(11));
+		var fieldSize = area;
+		var returns = [];
+		var objectold = [];
+		for (var x = 0; x < (area.x * 11) ; x++){
+			var hori = startCoord.x + x ;
+			for (var y = 0; y < (area.y * 11) ; y++) {
+				var verti = startCoord.y + y;
+				var object = jFindMapObjectNearAbs(jCoord(hori,verti), 1,resname);
+				//jPrint(jCoord(hori,verti));
+				if (object) {
+					var same = objectold;
+					//jToConsole("Found one");
+					if (object != objectold)
+						returns.push(object);
+					
+				}
+			}
+		}
+		jPrint("Object length is " + returns.length);
+	return returns;
+}
+
+function selectInRect_mouse_all_multi(resname) {// [res, res2, res3][];
+	jToConsole(resname);
+	jMoveStep(jCoord(0, 0));
+	var offs = jCoord(0, 0);
+	var space = jCoord(1, 1);
+	var confirm = false;
+
+	SelArea = jAreaSelector()
+	jDrawGroundRect(SelArea[2], SelArea[3]);
+	area = SelArea[3]
+	offs = SelArea[2]
+	var startCoord = jTilify(jMyCoords()).add(offs.mul(11));
+	var fieldSize = area;
+	var returns = [];
+	var objectold = [];
+	jDrawGroundRect(offs, jCoord(0, 0));
+	var currentres = resname[0];
+	for (key in resname){
+
+		if (key > 0) var currentres = resname[key];
+		returns.push([]);
+		for (var x = 0; x < (area.x) ; x++){
+			var hori = startCoord.x + x  * 11;
+			for (var y = 0; y < (area.y) ; y++) {
+				var verti = startCoord.y + y * 11;
+				var object = jFindMapObjectNearAbs(jCoord(hori,verti), 11,currentres);
+				//jPrint(jCoord(hori,verti));
+				if (object) {
+					var same = objectold;
+					//jToConsole("Found one");
+					if (object != objectold)
+						
+						returns[key].push(object);
+					
+				}
+			}
+		}
+		jPrint("Object length is " + returns.length);
+	}
+	return returns;
+}
+
+function selectAreaInRect_mouse(title) {
+	jToConsole(title)
+	SelArea = jAreaSelector()
+	jDrawGroundRect(SelArea[2], SelArea[3]);
+	area = SelArea[3]
+	offs = SelArea[2]
+	jPrint(SelArea[0]);
+	jPrint(SelArea[1]);
+	jPrint(SelArea[2]);
+	jPrint(SelArea[3]);
+	jPrint(SelArea[4]);
+	jDrawGroundRect(offs, jCoord(0, 0));
+
+		var startCoord = jTilify(jMyCoords()).add(offs.mul(11));
+		var fieldSize = area;
+		var returns = [];
+		
+	//jToConsole(size);
+	//jToConsole(startCoord);
+	//jToConsole(offs);
+
+	returns[0] = jCoord(startCoord.x,startCoord.y ); // Top left
+	returns[1] = jCoord(startCoord.x,startCoord.y + 11 * (area.y - 1) ); // Bottom Left
+	returns[2] = jCoord(startCoord.x + 11 * (area.x- 1),startCoord.y ); // Top Right
+	returns[3] = jCoord(startCoord.x + 11 * (area.x- 1),startCoord.y + 11 * (area.y - 1) ); // Bottom Right
+	returns[4] = area;
+
+	
+
+	
+	
+	return returns;
+}
+
+
+function eGetKey(K){
+	V = jGetKey(K)
+	return V
+}
+
+function eSetKey(K,V){
+	V = jSetKey(K,V)	
+	return V
+}
+
+function getSacrifices(){
+   nl = jNumenList();
+   nl[0] = nl[0].replaceAll("<|!|>|v(1|2|3)","").replaceAll("\\([^\\(]*\\)", "");
+   nl[1] = nl[1].replaceAll("<|!|>|v(1|2|3)","").replaceAll("\\([^\\(]*\\)", "");
+   nl[2] = nl[2].replaceAll("<|!|>|v(1|2|3)","").replaceAll("\\([^\\(]*\\)", "");
+   return [nl[0], nl[1], nl[2]];
+}

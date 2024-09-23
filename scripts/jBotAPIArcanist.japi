@@ -1,0 +1,991 @@
+function toInt(value) { return ~~value; }
+
+function findFullBarrel() {
+   jMoveStep(jCoord(1, 0));
+   jWaitStartMove();
+   jWaitEndMove();
+   var barrels = jGetObjects(50, jCoord(0, 0), ["barrel"]);
+   barrelnumber = 0;
+   var i = 0;
+   for (var i = 0; i < barrels.length; i++) {
+	   var barrel = barrels[barrelnumber]
+	   mycoords = jMyCoords();
+	   goNearPosition(barrel.position(), 1)
+	   waitPFEndMove();
+	   jSleep(1000);
+	   jDoClick(barrel.getID(), 3, 0);
+       while(!jHaveWindow("Barrel")) jSleep(100);
+	   if(jGetWindow("Barrel").getLabelText(1).indexOf("water") != -1){
+
+	   return barrel;
+	   }
+	   else barrelnumber++;
+}
+}
+
+function getNearest(object) {
+   var obj = jGetObjects(40, jCoord(0, 0), object);
+   var min_len = 100500; 
+   var objid = 0;
+   for (var i = 0; i < obj.length; i++) {
+      if (obj[i].position().dist(jMyCoords()) < min_len) {
+         objid = obj[i];
+         min_len = obj[i].position().dist(jMyCoords());
+      }
+   }
+   return objid;
+}
+
+function sortByDistance(resname){
+
+	var objid = jGetObjects(40, jCoord(0,0), resname);
+	var swapped = false
+	do{
+	     var swapped = false
+	     for (var i = 1; i < objid.length - 1; i++){
+
+	     	if (obj[i].position().dist(jMyCoords()) < obj[i].position().dist(jMyCoords())){
+		        var swap = objid[i - 1];
+		     	objid[i-1] = objid[i];
+		     	objid[i] = swap;
+		        var swapped = true
+		    }
+	    }
+	 }while(!swapped);
+	return objid;
+}
+function getWaterFromBarrel (barrels) {
+	while (checkInventory().getItems("invobjs/buckete").length > 0) {
+	   inventory = checkInventory();
+	  // var barrel = findFullBarrel();
+	     jMoveStep(jCoord(1, 0));
+	   jWaitStartMove();
+	   jWaitEndMove();
+	   if (barrels == null)
+			var barrels = jGetObjects(50, jCoord(0, 0), ["barrel"]);
+	   barrelnumber = 0;
+	   var i = 0;
+	   while(1) {
+		   var barrelz = barrels[0]
+		   
+		   jPrint("barrel replace coords = " + mycoords);
+		   goNearPosition(barrelz.position(), 1)
+		   var mycoords = jMyCoords();
+		   jSleep(1000);
+		   jDoClick(barrelz.getID(), 3, 0);
+		   while(!jHaveWindow("Barrel")) {
+				goNearPosition(barrelz.position(), 1);
+				jSleep(100);
+				jDoClick(barrelz.getID(), 3, 0);	
+				jSleep(500);
+			}
+			if (jHaveWindow("Barrel")){
+				try{
+		  			if(jGetWindow("Barrel").getLabelText(1).indexOf("water") != -1){
+					var barrel = barrels[i];
+					break;
+		  	 		}
+		  	 		else barrels.splice(0, 1);
+				}
+				catch(e){
+					jPrint("Barrelshit error " + e);
+				}
+			}
+			
+
+			
+			jAbsClick(mycoords, 1, 0);
+			jSleep(300);
+			var mycoords = [];
+			jPrint("barrel replace coords = " + mycoords);
+	  }
+	   var bucket = inventory.getItems("buckete")[0];
+	   var bucket_coord = bucket.coord();
+	   var bucket_name = bucket.resName();
+	   bucket.take();
+	   jWaitDrag();
+	   barrel.interactClick(0);
+	   while (jGetDraggingItem().resName() == bucket_name) jSleep(100);
+	   inventory.drop(bucket_coord);
+	   jAbsClick(mycoords, 1, 0);
+	   jSleep(750);
+	} 
+}
+
+function takeItemsToContainer (itemlist, container, containerwindow, radius) {
+jAbsClick(jMyCoords(), 1, 0);
+if (radius == null) radius = 1;
+if (checkInventory().getItems(itemlist).length > 0) {
+		var inventory = checkInventory();
+		while (!jGetWindow(containerwindow)){
+			goNearPosition(container.position(), radius);
+			waitPFEndMove();
+			jDoClick(container.getID(),3,0);
+			jSleep(1500);
+		}
+		if (jGetWindow(containerwindow) != -1 && jGetWindow(containerwindow).getInventories()[0].freeSlotsCoords().length > 0) {
+			jToConsole("Putting Items into the Container");
+			if (inventory.getItems(itemlist).length > 0);
+			inventory.getItems(itemlist)[0].transferSuchAll();
+			jSleep(500); 
+			var itemlength = jGetWindow(containerwindow).getInventories()[0].freeSlotsCoords().length;
+		}
+}
+if (jGetWindow(containerwindow) != null)
+	var itemlength = jGetWindow(containerwindow).getInventories()[0].freeSlotsCoords().length;
+else itemlength = 0;
+jMoveStep(jCoord(0, 0));
+return itemlength;
+}
+
+
+function takeItemsToContainers (itemlist, containerlist, containerwindow, radius) {
+jAbsClick(jMyCoords(), 1, 0);
+if (radius == null) radius = 1;
+var out = 0;
+while (checkInventory().getItems(itemlist).length > 0) {
+		var inventory = checkInventory();
+		while (!jGetWindow(containerwindow)){
+			goNearPosition(containerlist[0].position(), radius);
+			waitPFEndMove();
+			var mycoords = jMyCoords();
+			jDoClick(containerlist[0].getID(),3,0);
+			jSleep(1500);
+		}
+		if (jGetWindow(containerwindow) != null){
+			if ( jGetWindow(containerwindow).getInventories()[0].freeSlotsCoords().length > 0) {
+			jToConsole("Putting Items into the Container");
+			if (checkInventory().getItems(itemlist).length > 0)
+				inventory.getItems(itemlist)[0].transferSuchAll();
+			jSleep(500); 
+			}
+			
+			else {
+				containerlist.splice(out, 1);
+				jToConsole("Deleted Full Container");
+				//out++;
+				jSleep(500);
+			}
+			jAbsClick(mycoords, 1, 0);
+			
+		}
+		jSleep(1000);
+
+}
+return containerlist;
+}
+
+function openCupboard(cupboard){
+	while(jHaveWindow("Cupboard")) {
+		jAbsClick(jMyCoords(), 1, 0);
+		if (jHaveWindow("Cupboard")) jSleep(500);
+	}
+
+		while(!jHaveWindow("Cupboard")) {
+				goNearPosition(cupboard.position(), 1);
+				waitPFEndMove();
+				jSleep(500);
+				jDoClick(cupboard.getID(), 3, 0);
+				jSleep(1000);
+				}
+	
+}
+
+function openContainer(container,containerwindow){
+	while(jHaveWindow(containerwindow)) {
+		jAbsClick(jMyCoords(), 1, 0);
+		if (jHaveWindow(containerwindow)) jSleep(500);
+	}
+
+		while(!jHaveWindow(containerwindow)) {
+				goNearPosition(container.position(), 1);
+				jSleep(500);
+				jDoClick(container.getID(), 3, 0);
+				jSleep(1000);
+				}
+	
+}
+
+function openChest(chest){
+		while(!jHaveWindow("Chest")) {
+			goNearPosition(chest.position(), 1);
+			waitPFEndMove();
+			jSleep(500);
+			jDoClick(chest.getID(), 3, 0);
+			jSleep(100);
+			jToConsole("Walked to Chest");
+			}
+			return;
+}
+function openSign(sign, signwindow){
+		if (jHaveWindow(signwindow)) {
+			jAbsClick(jMyCoords(), 1, 0);
+			jSleep(500);
+			}
+		while(!jHaveWindow(signwindow)){
+			jToConsole("Opening Sign");
+			goNearPosition(sign.position(), 1);
+			jSleep(500);
+			jDoClick(sign.getID(), 3, 0);
+			jSleep(500);
+			if (!jHaveWindow(signwindow)) jSleep(500);
+			}
+			return;
+}
+
+function alertW(title,message){
+         jPlayBeep(3000);
+         var blist = ['Exit'];
+         var selectWindow = jGUIWindow(jCoord(250, 250), jCoord(150, blist.length * 25 + 15), title);
+         var label = jGUILabel(selectWindow, jCoord(5, 5), message);
+         for(var i = 0; i < blist.length; i++)
+            jGUIButton(selectWindow, jCoord(5, 25 + i*25),  100, blist[i]);
+         selectWindow.toggleCloseButton();
+         var btext = selectWindow.waitButtonClick();
+         if(btext == blist[0]){
+            jExit();selectWindow.destroy();
+         }
+         sayVillage(title+ " -> "+message);
+}
+
+
+function tohearth() {
+	jSendDoubleAction("theTrav", "hearth");
+	jWaitProgress(actionTimeout);
+	jSleep(1000);
+}
+
+function tovillage() {
+if (travelCount() > 80)
+	drinkWine();
+	jSleep(500);
+	jSendDoubleAction("theTrav", "village");
+	jWaitProgress(actionTimeout);
+	jSleep(1000);
+	}
+		
+
+function dropnorth() {
+	var current_pos = jMyCoords();
+	while (jFindObjectByName ("borka", 1).isCarrying()){
+		goNearPosition(current_pos, 0)
+      	jOffsetClick(jCoord(0, -1), 3, 0);
+      	jWaitMove(1000);
+      	if (jFindObjectByName ("borka", 1).isCarrying())
+      		jSleep(1000);
+      	
+  	}
+	  return;
+}
+
+function duplicate(array){
+   var returns = [];
+   for (key in array){
+      returns[key] = array[key];
+   }
+   return returns;
+}
+
+function getItemsFromContainers (itemlist, containerlist, containerwindow, noofitems, radius) {
+jAbsClick(jMyCoords(), 1, 0);
+while (jGetWindow(containerwindow) != null){
+	jAbsClick(jMyCoords(), 1, 0);
+	jSleep(1500);
+}
+//jToConsole(containerlist);
+if (radius == null) radius = 1
+var out = 0 //containerlist.length - 1;
+//jToConsole("Getting");
+if (containerlist.length > 0)
+while (checkInventory().freeSlotsCoords().length > 0) {
+//jToConsole("Getting2");
+	var g = 0;
+	while (g < noofitems) {
+	//jToConsole(containerlist[out]);
+	//jToConsole(containerlist[containerlist.length - 1]);
+		var inventory = checkInventory();
+		if (containerlist.length == 0) {return containerlist; jToConsole("Getting4"); }
+		var containerlist = containerlist;
+
+		if (checkInventory().freeSlotsCoords().length > 0) {
+			while (!jGetWindow(containerwindow)){
+				goNearPosition(containerlist[0].position(), radius);
+				waitPFEndMove();
+				var player_position = jMyCoords();
+				jDoClick(containerlist[0].getID(),3,0);
+				jSleep(1500);
+			}
+		
+			//jToConsole("Getting Items from the Container");
+			if (jGetWindow(containerwindow) != null && jGetWindow(containerwindow).getInventories()[0].getItems(itemlist).length > 0) {
+			var itemsnumbers = jGetWindow(containerwindow).getInventories()[0].getItems(itemlist).length;
+			//if (noofitems == 100500) {jGetWindow(containerwindow).getInventories()[0].getItems(itemlist)[0].transferSuchAll();}
+			//else{
+				jGetWindow(containerwindow).getInventories()[0].getItems(itemlist)[0].transfer();
+				//}
+				jSleep(200);
+				try{
+					while (jGetWindow(containerwindow).getInventories()[0].getItems(itemlist).length == itemsnumbers) {jSleep(500); }
+					g++;
+					}
+				catch(e) {
+					jPrint(e);
+					jAbsClick(jMyCoords(), 1, 0);
+				}
+				
+				}
+			jSleep(1500); 
+			if (jGetWindow(containerwindow) != null){
+				if (jGetWindow(containerwindow).getInventories()[0].getItems(itemlist).length < 1) {
+				jToConsole(containerlist.length + " " + containerwindow + "s left");
+					//if (containerlist[out] == containerlist[containerlist.length -1]) {
+						//var containerlist = -1;
+						//return containerlist;
+					//}
+					//jToConsole("Getting11");
+					containerlist.splice(0, 1);
+					//containerlist.length -= 1;
+					//var out = containerlist.length - 1;
+					jToConsole("Deleted Empty Container");
+					jAbsClick(player_position, 1, 0);
+					while (jGetWindow(containerwindow) != null) jSleep(500);
+					jSleep(500);
+				}
+			}
+			
+		}
+		else {
+		//jToConsole("Getting12");
+			jAbsClick(player_position, 1, 0);
+			jToConsole("Inventory full");
+			return containerlist;
+			}
+		}
+		//jToConsole("Getting13");
+		jAbsClick(player_position, 1, 0);
+		return containerlist;
+	}
+if (containerlist.length == 0) {
+containerlist = [];
+return containerlist;
+}
+jToConsole("Getting14");
+jToConsole("Inventory full");
+return containerlist;
+}
+
+function getItemsFromContainer (itemlist, containerlist, containerwindow, noofitems, radius) { // use noofitems = 100500 for all
+jMoveStep(jCoord(0, 0));
+if (radius == null) radius = 1
+while (checkInventory().freeSlotsCoords().length > 0) {
+	for (var g = 0; g < noofitems; g++) {
+		var inventory = checkInventory();
+		if (containerlist.length == 0) return;
+		while (!jGetWindow(containerwindow)){
+			goNearPosition(containerlist.position(), radius);
+			waitPFEndMove();
+			var player_pos = jMyCoords();
+			jDoClick(containerlist.getID(),3,0);
+			jSleep(1500);
+		}
+		if (checkInventory().freeSlotsCoords().length > 0) {
+			//jToConsole("Getting Items from the Container");
+			if (jGetWindow(containerwindow) != -1 && jGetWindow(containerwindow).getInventories()[0].getItems(itemlist).length > 0) {
+				var itemsnumbers = jGetWindow(containerwindow).getInventories()[0].getItems(itemlist).length;
+				if (noofitems == 100500) jGetWindow(containerwindow).getInventories()[0].getItems(itemlist)[0].transferSuchAll();
+				else jGetWindow(containerwindow).getInventories()[0].getItems(itemlist)[0].transfer();
+				while (jGetWindow(containerwindow).getInventories()[0].getItems(itemlist).length == itemsnumbers) {jSleep(500); }	
+				var itemsnumbers = jGetWindow(containerwindow).getInventories()[0].getItems(itemlist).length;
+				jSleep(500); 
+			}
+			if (jGetWindow(containerwindow) != -1 && jGetWindow(containerwindow).getInventories()[0].getItems(itemlist).length == 0) {
+				jAbsClick(player_pos, 1, 0);
+				return false;
+				//out++;
+				jSleep(500);
+				}
+			
+		}
+		else {
+			jAbsClick(player_pos, 1, 0);
+			jSleep(500);
+			jToConsole("Inventory full");
+			return true;
+			}
+		if (noofitems == 100500) { jAbsClick(player_pos, 1, 0); return itemsnumbers;	}
+			
+		}
+		jAbsClick(player_pos, 1, 0);
+		return itemsnumbers;
+	}
+
+jToConsole("Inventory full");
+return itemsnumbers;
+}
+
+function dropFromCursor(where) { //  1 = inventory
+if (jIsDragging()) {
+	if (where = null) where = 1
+	if (where = 1) {
+		if (checkInventory().freeSlots() > 0) checkInventory().drop(checkInventory().freeSlotsCoords()[0]);
+			jSleep(500);
+			if (!jIsDragging())	return;
+	}
+	while (jIsDragging()) {
+		jDropObject(0);
+		jSleep(300);      
+		}
+}
+} 
+
+function findObjectbyBLOB(object, type, type2, type3, type4, type5) { // no water = 64, water = 66, fuel = 65, water and fuel = 67, lit = 85 cooking = 93
+   var objid = 0;
+   var g = 0;
+   var posb = jGetObjects(50, jCoord(0, 0), [object]);
+   for (var i = 0; i < 50; i++) {
+      objid = posb[g]
+	  if (objid != null)
+		if (objid.blob(0) == type) return objid;
+	  if (objid != null && type2)
+		if (objid.blob(0) == type2) return objid;
+	  if (objid != null && type3)
+		if (objid.blob(0) == type3) return objid;
+	  if (objid != null && type4)
+		if (objid.blob(0) == type4) return objid;
+	  if (objid != null && type5)
+		if (objid.blob(0) == type5) return objid;
+		g++;
+   }
+}
+
+
+function selectMultiple(object, type) {
+   var ta = [];
+   var ids = [];
+   while (1) {
+      var sign = jSelectObject("Select "+ type+ " , click on the ground to stop selecting");
+      if (sign == null) break;
+      var name = sign.name();
+      if (name.indexOf(object) != -1) {
+         if (ids.indexOf(sign.getID()) != -1) {
+            jToConsole("ERROR: This "+type+" has been already selected.");
+            continue;
+         }
+         ta.push(sign);
+         ids.push(sign.getID());
+         jToConsole(type +" count: " + ta.length);
+      }
+      else break;
+   }
+   return ta;
+}
+
+function selectInRect_Decider(resname, blob, message){
+		if (typeof selectInRect_mouse == 'function') { var cupboards = selectInRect_mouse(resname, blob, message) }
+		else
+			var cupboards = selectInRect(resname, blob, message);
+		return cupboards;
+}
+
+function selectAreaInRect_Decider(message){
+		if (typeof selectAreaInRect_mouse == 'function') { var cupboards = selectAreaInRect_mouse(message); }
+		else
+			var cupboards = selectAreaInRect(message);
+		return cupboards;
+}
+
+function selectInRect_HoriDecider(resname, blob, message){
+		if (typeof selectInRect_mouseHori == 'function') { var cupboards = selectInRect_mouseHori(resname, blob, message) }
+		else
+			var cupboards = selectInRectHori(resname, blob, message);
+		return cupboards;
+}
+
+function selectAllInRect_HoriDecider(resname, blob, message){
+		if (typeof selectInRect_mouse_all == 'function') { var cupboards = selectInRect_mouse_all(resname, blob, message) }
+		else
+			var cupboards = selectAllInRect(resname, blob, message);
+		return cupboards;
+}
+
+function selectInRect(resname, blob, title) {
+	jMoveStep(jCoord(0, 0));
+	var offs = jCoord(0, 0);
+	var size = jCoord(1, 1);
+	var confirm = false;
+	jDrawGroundRect(offs, size);
+	var blist = ["West", "East", "North", "South", "Inc width", "Inc height", "Dec width", "Dec height", "Confirm", "Exit"];
+	var selectWindow = jGUIWindow(jCoord(250, 250), jCoord(105, blist.length * 25 + 15), "Area");
+	var label = jGUILabel(selectWindow, jCoord(5, 5), title);
+	for(var i = 0; i < blist.length; i++)
+		jGUIButton(selectWindow, jCoord(5, 25 + i*25),  100, blist[i]);
+	selectWindow.toggleCloseButton();
+	var btext = "";
+	while(btext != "Exit"){
+		btext = selectWindow.waitButtonClick();
+		jToConsole(btext);
+		if(btext == blist[0]) offs.x--;
+		if(btext == blist[1]) offs.x++;
+		if(btext == blist[2]) offs.y--;
+		if(btext == blist[3]) offs.y++;
+		if(btext == blist[4]) size.x++;
+		if(btext == blist[5]) size.y++;
+		if(btext == blist[6]) if(size.x > 1) size.x--;
+		if(btext == blist[7]) if(size.y > 1) size.y--;
+		if(btext == blist[8]) {confirm = true; break;}
+		jDrawGroundRect(offs, size);
+	}
+	selectWindow.destroy();
+	jDrawGroundRect(offs, jCoord(0, 0));
+	var startCoord = jMyCoords().add(offs.mul(11));
+	var fieldSize = size;
+	var returns = [];
+	//jToConsole(size);
+	//jToConsole(startCoord);
+	//jToConsole(offs);
+	
+	for (var x = 0; x < size.x ; x++){
+		var hori = startCoord.x + (x * 11);
+		for (var y = 0; y < size.y ; y++) {
+			var verti = startCoord.y + (y * 11);
+			var object = jFindMapObjectNearAbs(jCoord(hori,verti), 1,resname);
+			//jPrint(jCoord(hori,verti));
+			if (object) {
+				var same = 1;
+				//jToConsole("Found one");
+				returns.push(object);
+				
+			}
+		}
+	}
+
+	return returns;
+}
+
+
+function makeSign(sign_coord, action, signwindow, material){
+	while (jGetWindow(signwindow)){
+		jAbsClick(jMyCoords(), 1, 0);
+		jSleep(300);
+	}
+	while(!jGetWindow(signwindow)){
+		jPrint("Trying to make sign");
+		goNearPosition(sign_coord, 1);
+		var coords = jMyCoords();
+		jSendDoubleAction(action[0], action[1]);
+		jSleep(1000);
+		
+		jPrint("Placing the sign")
+		jPlace(jCoord(0, -1) ,  1, 0);
+		//jAbsClick(sign_coord, 1, 0);
+		jSleep(1500);
+		if (jGetWindow(signwindow)){
+			var sign = jFindMapObjectNearAbs(sign_coord, 1, "sign");
+			checkInventory().getItems(material)[0].transferSuchAll();
+			jSleep(500);
+		}
+		
+	}
+	if (jMyCoords() != coords){
+		jAbsClick(coords, 1, 0);
+		jWaitMove();
+	}
+	return sign;
+}
+
+function selectInRectHori(resname, blob, title) {
+	jMoveStep(jCoord(0, 0));
+	var offs = jCoord(0, 0);
+	var size = jCoord(1, 1);
+	var confirm = false;
+	jDrawGroundRect(offs, size);
+	var blist = ["West", "East", "North", "South", "Inc width", "Inc height", "Dec width", "Dec height", "Confirm", "Exit"];
+	var selectWindow = jGUIWindow(jCoord(250, 250), jCoord(105, blist.length * 25 + 15), "Area");
+	var label = jGUILabel(selectWindow, jCoord(5, 5), title);
+	for(var i = 0; i < blist.length; i++)
+		jGUIButton(selectWindow, jCoord(5, 25 + i*25),  100, blist[i]);
+	selectWindow.toggleCloseButton();
+	var btext = "";
+	while(btext != "Exit"){
+		btext = selectWindow.waitButtonClick();
+		jToConsole(btext);
+		if(btext == blist[0]) offs.x--;
+		if(btext == blist[1]) offs.x++;
+		if(btext == blist[2]) offs.y--;
+		if(btext == blist[3]) offs.y++;
+		if(btext == blist[4]) size.x++;
+		if(btext == blist[5]) size.y++;
+		if(btext == blist[6]) if(size.x > 1) size.x--;
+		if(btext == blist[7]) if(size.y > 1) size.y--;
+		if(btext == blist[8]) {confirm = true; break;}
+		jDrawGroundRect(offs, size);
+	}
+	selectWindow.destroy();
+	jDrawGroundRect(offs, jCoord(0, 0));
+		var startCoord = jTilify(jMyCoords()).add(offs.mul(11));
+		var area = size;
+		var returns = [];
+		for (var y = 0; y < area.y ; y++) {
+				var verti = startCoord.y + (y * 11);
+				for (var x = 0; x < area.x ; x++){
+					var hori = startCoord.x + (x * 11);
+			
+				var object = jFindMapObjectNearAbs(jCoord(hori,verti), 1,resname);
+				//jPrint(jCoord(hori,verti));
+				if (object) {
+					var same = 1;
+					//jToConsole("Found one");
+					returns.push(object);
+					
+				}
+			}
+		}
+
+	return returns;
+}
+
+
+function selectAllInRect(resname, blob, title) {
+	jMoveStep(jCoord(0, 0));
+	var offs = jCoord(0, 0);
+	var size = jCoord(1, 1);
+	var confirm = false;
+	jDrawGroundRect(offs, size);
+	var blist = ["West", "East", "North", "South", "Inc width", "Inc height", "Dec width", "Dec height", "Confirm", "Exit"];
+	var selectWindow = jGUIWindow(jCoord(250, 250), jCoord(105, blist.length * 25 + 15), "Area");
+	var label = jGUILabel(selectWindow, jCoord(5, 5), title);
+	for(var i = 0; i < blist.length; i++)
+		jGUIButton(selectWindow, jCoord(5, 25 + i*25),  100, blist[i]);
+	selectWindow.toggleCloseButton();
+	var btext = "";
+	while(btext != "Exit"){
+		btext = selectWindow.waitButtonClick();
+		if(btext == blist[0]) offs.x--;
+		if(btext == blist[1]) offs.x++;
+		if(btext == blist[2]) offs.y--;
+		if(btext == blist[3]) offs.y++;
+		if(btext == blist[4]) size.x++;
+		if(btext == blist[5]) size.y++;
+		if(btext == blist[6]) if(size.x > 1) size.x--;
+		if(btext == blist[7]) if(size.y > 1) size.y--;
+		if(btext == blist[8]) {confirm = true; break;}
+		jDrawGroundRect(offs, size);
+	}
+	selectWindow.destroy();
+	jDrawGroundRect(offs, jCoord(0, 0));
+	var startCoord = jMyCoords().add(offs.mul(11));
+	var fieldSize = size;
+	var returns = [];
+	//jToConsole(size);
+	//jToConsole(startCoord);
+	//jToConsole(offs);
+	jToConsole("Finding Stuff");
+	jToConsole("This may take a while...");
+	for (var x = 0; x < (size.x * 11) ; x++){ // This shit takes fucking ages, it needs to search each abs coord, since trees are not alligned to grid.
+		var hori = startCoord.x + x ;
+		for (var y = 0; y < (size.y * 11) ; y++) {
+			var verti = startCoord.y + y ;
+			var object = jFindMapObjectNearAbs(jCoord(hori,verti), 1,resname);
+			//jPrint(jCoord(hori,verti));
+			if (object) {
+				var same = 1;
+				//jToConsole("Found one");
+				returns.push(object);
+				
+			}
+		}
+	}
+
+	return returns;
+}
+
+function selectAreaInRect(title) {
+	jMoveStep(jCoord(0, 0));
+	var offs = jCoord(0, 0);
+	var size = jCoord(1, 1);
+	var confirm = false;
+	jDrawGroundRect(offs, size);
+	var blist = ["West", "East", "North", "South", "Inc width", "Inc height", "Dec width", "Dec height", "Confirm", "Exit"];
+	var selectWindow = jGUIWindow(jCoord(250, 250), jCoord(105, blist.length * 25 + 15), "Area");
+	var label = jGUILabel(selectWindow, jCoord(5, 5), title);
+	for(var i = 0; i < blist.length; i++)
+		jGUIButton(selectWindow, jCoord(5, 25 + i*25),  100, blist[i]);
+	selectWindow.toggleCloseButton();
+	var btext = "";
+	while(btext != "Exit"){
+		btext = selectWindow.waitButtonClick();
+		if(btext == blist[0]) offs.x--;
+		if(btext == blist[1]) offs.x++;
+		if(btext == blist[2]) offs.y--;
+		if(btext == blist[3]) offs.y++;
+		if(btext == blist[4]) size.x++;
+		if(btext == blist[5]) size.y++;
+		if(btext == blist[6]) if(size.x > 1) size.x--;
+		if(btext == blist[7]) if(size.y > 1) size.y--;
+		if(btext == blist[8]) {confirm = true; break;}
+		jDrawGroundRect(offs, size);
+	}
+	selectWindow.destroy();
+	jDrawGroundRect(offs, jCoord(0, 0));
+	var startCoord = jMyCoords().add(offs.mul(11));
+	var fieldSize = size;
+	var returns = [];
+	//jToConsole(size);
+	//jToConsole(startCoord);
+	//jToConsole(offs);
+
+	returns[0] = jCoord(startCoord.x,startCoord.y ); // Top left
+	returns[1] = jCoord(startCoord.x,startCoord.y + 11 * (size.y - 1) ); // Bottom Left
+	returns[2] = jCoord(startCoord.x + 11 * (size.x- 1),startCoord.y ); // Top Right
+	returns[3] = jCoord(startCoord.x + 11 * (size.x- 1),startCoord.y + 11 * (size.y - 1) ); // Bottom Right
+	returns[4] = size;
+
+	
+
+	
+	
+	return returns;
+}
+				
+
+
+//funcs
+function putItemsToSigns (itemlist, signlist, signwindow, radius, signval) {
+if (radius == null) radius = 1;
+if (signval == null) signval = 1;
+var out = 0;
+while (checkInventory().getItems(itemlist).length > 0) {
+		var inventory = checkInventory();
+		while (!jGetWindow(signwindow)){
+			goNearPosition(signlist[out].position(), radius);
+			waitPFEndMove();
+			var player_pos = jMyCoords();
+			jDoClick(signlist[out].getID(),3,0);
+			jSleep(1500);
+		}
+		var buildvals = GetBuildValues(signwindow, signval);
+		jToConsole(buildvals[0]);
+		if (checkInventory().getItems(itemlist).length > 0){
+			if (jGetWindow(signwindow) != -1 && buildvals[0] > 0) {
+				jToConsole("Putting Items into the Container");
+				if (inventory.getItems(itemlist).length > 0) inventory.getItems(itemlist)[0].transferSuchAll();
+				jSleep(500); 
+				jAbsClick(player_pos, 1, 0);
+				if (checkInventory().getItems(itemlist).length == 0) return signlist;
+			}
+			else {
+				signlist.splice(out, 1);
+				jToConsole("Deleted Full Container");
+				jMoveStep(jCoord(0, 0));
+				//out++;
+				jSleep(500);
+				}
+			}
+		}
+		jSleep(1000);
+return signlist;
+}
+function getItemsFromSigns (itemlist, signlist, signwindow, noofitems, radius, signval) {
+if (radius == null) radius = 1;
+if (signval == null) signval = 1;
+var out = 0;
+var takenitems = 0;
+while (checkInventory().freeSlotsCoords().length > 0) {
+	while (takenitems < noofitems) {
+		var inventory = checkInventory();
+		//jToConsole(takenitems + " " + noofitems);
+		while (!jGetWindow(signwindow)){
+			try{
+				goNearPosition(signlist[out].position(), radius);
+				waitPFEndMove();
+				jDoClick(signlist[out].getID(),3,0);
+				jSleep(1500);
+			}catch(e) {jToConsole(e); out++;}
+		}
+		var buildVals = GetBuildValues(signwindow, signval);
+		jToConsole(buildVals[1]);
+		if (buildVals[1] == 0) {
+				signlist.splice(out, 1);
+				jToConsole("Deleted Empty Sign");
+				jMoveStep(jCoord(0, 0));
+				while (jGetWindow(signwindow)) jSleep(500);
+		}
+		else {
+			itemstotake = 0;
+			if (buildVals[1] > noofitems - takenitems) itemstotake = noofitems - takenitems;
+			else {
+				itemstotake = buildVals[1];
+				jToConsole(itemstotake);
+				if (itemstotake == 0)
+					signlist.splice(out, 1);
+			}
+			
+			for (var t = 0; t < itemstotake; t++) {	
+				if (checkInventory().freeSlotsCoords().length > 0) {
+					jPrint("Getting Items from the Container");
+						itemlength = checkInventory().getItems(itemlist).length
+						jPrint ("itemlength = "+itemlength + " remaining " + (itemstotake - noofitems));
+						jTransferBuildItem(signwindow, signval);
+						jSleep(500);
+
+						if (buildVals[1] == 0) {
+							signlist.splice(out, 1);
+							jToConsole("Deleted Empty Sign");
+							jMoveStep(jCoord(0, 0));
+							while (jGetWindow(signwindow)) jSleep(500);
+						}
+					
+					
+				}
+				else {
+					jToConsole("Inventory full");
+					return signlist;
+				}	
+			}
+			jMoveStep(jCoord(0, 0));
+			jSleep(500);
+			var takenitems = takenitems + itemstotake;
+		}
+	}
+		return signlist;
+	}
+jToConsole("Inventory full");
+return;
+}
+
+function GetBuildValues(signName, itemNum)
+{
+   var str = jGetBuildValues(signName, itemNum);
+   var strRes = str.split("/");
+   var res = [];
+   for (var i = 0; i < strRes.length; i++){
+   res[i] = parseInt(strRes[i]); 
+	} 
+   return res; 
+}
+
+function putItemsToSign (itemlist, signlist, signwindow, radius, signval) {
+//if(signval == null) signval = 0;
+if (radius == null) radius = 1;
+var out = 0;
+while (checkInventory().getItems(itemlist).length > 0) {
+		var inventory = checkInventory();
+		while (!jGetWindow(signwindow)){
+			goNearPosition(signlist.position(), radius);
+			waitPFEndMove();
+			var player_pos = jMyCoords();
+			jDoClick(signlist.getID(),3,0);
+			jSleep(1500);
+		}
+		var buildvals = GetBuildValues(signwindow, signval);
+		jToConsole(buildvals[0]);
+		if (checkInventory().getItems(itemlist).length > 0){
+			if (jGetWindow(signwindow) != -1 && buildvals[0] > 0) {
+				jToConsole("Putting Items into the Sign");
+				if (inventory.getItems(itemlist).length > 0) inventory.getItems(itemlist)[0].transferSuchAll();
+				jSleep(500); 
+				jAbsClick(player_pos, 1, 0);
+				if (checkInventory().getItems(itemlist).length == 0) return signlist;
+			}
+			if (buildvals[0] == 0) {
+				jToConsole("Sign Full")
+				return false;
+			}
+			if (jGetWindow(signwindow) != -1) {jSleep(100);}
+			else { 
+				jToConsole("Sign not seen");
+				return false;
+			}
+		}
+		jSleep(1000);
+return signlist;
+}
+}
+
+function goNearPosition( position, offset){
+	    while (jIsMoving() || jMyCoords().dist(jTilify(position)) > offset*11){
+			var moving = jPFMoveOffset_LX(position, offset);
+			jSleep(500);
+			jPrint("[goNearPosition]Walking to " + position);
+			jPrint("[goNearPosition]Dist is " + jMyCoords().dist(jTilify(position)));
+			if (jMyCoords().dist(jTilify(position)) == offset*11) {
+				jPrint("[goNearPosition]Arrived at point");
+				return true;
+				}
+			if (moving == -1){
+				jToConsole("[goNearPosition] Point offscreen ")
+				return false;
+			}
+		}
+}
+
+function dropAll(item){
+		jMoveStep(jCoord(0, 0));
+		var drops = checkInventory().getItems(item);
+		for (var i = 0; i < drops.length; i++) {
+			if(drops[i].isActual())
+				drops[i].drop();
+		}
+}
+
+function liftObject(object){
+	while(!jFindObjectByName ("borka", 1).isCarrying())
+		  if(object != null) {
+		  goNearPosition(object.position(), 1);
+		  jSendAction("carry");
+		  jWaitCursor("chi");
+		  jDoClick(object.getID(), 1, 0);
+		  jWaitMove(2500);
+	}
+	  
+}
+
+
+function getObjectOffset(object, objects){//from second relative to first
+   var returns = [];
+   for (key in objects){
+   var refposition = object.position();
+   var coord = objects[key].position();
+   returns.push(jCoord(coord.x - refposition.x, coord.y - refposition.y));
+   }
+   return returns;
+}
+
+function setCoordByObject(coord, object){
+   var returns = [];
+   for (key in object){
+   var refposition = coord;
+   var objcoord = object[key].position();
+   returns.push(jCoord(objcoord.x - refposition.x, objcoord.y - refposition.y));
+   }
+   return returns;
+}
+
+
+
+function getCoordByObject(offset, object){
+
+   var refposition = object.position();
+
+   return jCoord(refposition.x + offset.x, refposition.y + offset.y);
+}
+
+function buildObjectArrayFromOffsetCoords(offsetcoords, object, resname){
+   var returns = [];
+   for (key in offsetcoords){
+      var coords = getCoordByObject(offsetcoords[key], object);
+      returns.push(jFindMapObjectNearAbs(coords, 1,resname));
+   }
+   return returns;
+}
+
+function restoreRect(area, startCoord){// rect[4], getCoordByObject
+	returns = [];
+	returns[0] = jCoord(startCoord.x,startCoord.y ); // Top left
+	returns[1] = jCoord(startCoord.x,startCoord.y + 11 * (area.y - 1) ); // Bottom Left
+	returns[2] = jCoord(startCoord.x + 11 * (area.x- 1),startCoord.y ); // Top Right
+	returns[3] = jCoord(startCoord.x + 11 * (area.x- 1),startCoord.y + 11 * (area.y - 1) ); // Bottom Right
+	returns[4] = area;
+
+	return returns;
+}
