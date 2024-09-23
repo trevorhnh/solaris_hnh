@@ -1,0 +1,1 @@
+java -Xms512m -Xmx512m -jar haven.jar legacy.havenandhearth.com
