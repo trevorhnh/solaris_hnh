@@ -1,5 +1,6 @@
-//#! name = Stones to Sign
+//#! name = Stones2Sign
 //#! uniq = statues_arcanist
+//#! tooltip = Chips Stones & Stores
 //#! icon = gfx/invobjs/stone
 
 //include("jBotAPITalon");
