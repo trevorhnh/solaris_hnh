@@ -199,11 +199,18 @@ public class Item extends Widget implements DTarget {
 				g.image(tex, Coord.z);
 				g.chcolor();
 			} else {
+				if (res.get().name.equals("gfx/invobjs/silkmoth")) {
+					if (tooltip.contains("Female")) {
+						g.chcolor(200, 100, 255, 255);
+					} else if (tooltip.contains("Male")) {
+						g.chcolor(100, 100, 255, 255);
+					} else {
+						g.chcolor();
+					}
+				}
 				g.image(tex, Coord.z);
 			}
 			if (num >= 0) {
-				// g.chcolor(Color.WHITE);
-				// g.atext(Integer.toString(num), new Coord(0, 30), 0, 1);
 				g.aimage(getqtex(num), Coord.z, 0, 0);
 			}
 			if (meter > 0) {
@@ -212,8 +219,6 @@ public class Item extends Widget implements DTarget {
 				int gr = (int) (a * 255);
 				int b = 0;
 				g.chcolor(r, gr, b, 255);
-				// g.fellipse(sz.div(2), new Coord(15, 15), 90, (int)(90 + (360
-				// * a)));
 				g.frect(new Coord(sz.x - 5, (int) ((1 - a) * sz.y)), new Coord(
 						5, (int) (a * sz.y)));
 				g.chcolor();

@@ -1,83 +1,113 @@
-//#! uniq = CHIPSTONES
-//#! tooltip = Chip stones to sign
-//#! name = Chip stones
+//#! name = Chip Stones
+//#! uniq = statues_arcanist
+//#! tooltip = Chips Stones & Puts in Sign
 //#! icon = gfx/invobjs/stone
-//---------------------------------------------------------------------
+
+//include("jBotAPITalon");
+include("jBotAPIArcanist");
 include("jBotAPI");
-//---------------------------------------------------------------------
-var s = 0;
-var foodList = ["meat-cow", "cowchorizo", "wurst", "meat", "cheese"];
-var inv = checkInventory();
-//---------------------------------------------------------------------
-function EatFood(){
-	var fitems = inv.getItems(foodList);
-	if (fitems.length <= 0) return;
-	fitems[0].iact();
-	if (jWaitPopup(actionTimeout)) jSelectContextMenu("Eat");
-	while(fitems[0].isActual()) jSleep(150);
+include("pathfinder");
+
+function Idol(){
+	this.signwindow = "Village Claim";
+	this.signval = 4;
+	this.radius = 2;
 }
-//---------------------------------------------------------------------
-function DropFromCursor(){
-	while (jIsDragging()){
-		jDropObject(0);
-		jSleep(300);
-	}
+function Statue(){
+	this.signwindow = "Statue of the Chiefton";
+	this.signval = 1;
+	this.radius = 1;
 }
-//---------------------------------------------------------------------
-function ChipStones(){
-	jSetSpeed(1);
-	var stones = [];
-	var i = 0;
-	var stone = jGetObjects(25, jCoord(0, 0), "bumlings");
-	stones = stone;
-	DropFromCursor();
-	if (jGetStamina() < 60) drinkWater();
-	if (jGetHungry() < 85) EatFood();
-	if (jGetHungry() < 52) Finish("too hungry.");
-	jPFClick(stones[i].getID(), 3 ,0);
-	jWaitPopup(actionTimeout);
-	jSleep(300);
-	if (jHavePopup()){
-		jSelectContextMenu("Chip stone");
-		jSleep(1500);
-	} 
-	while(jHaveHourglass()) {
-		jSleep(250);
-		if(checkInventory().freeSlots() < 2) {
-			DropFromCursor();
-			break;
+function Mansion(){
+	this.signwindow = "Stone Mansion";
+	this.signval = 1;
+	this.radius = 5;
+}
+function Milestone(){
+	this.signwindow = "Milestone"
+	this.signval = 1;
+	this.radius = 1;
+}
+
+function getNearestRock() {
+   var trees = jGetObjects(40, jCoord(0, 0), ["bumlings"]);
+   var min_len = 100500; 
+   var objid = 0;
+   for (var i = 0; i < trees.length; i++) {
+      if (trees[i].position().dist(jMyCoords()) < min_len) {
+         objid = trees[i];
+         min_len = trees[i].position().dist(jMyCoords());
+      }
+   }
+   return objid;
+}
+
+
+function buildstatue(item) {
+var sign = jSelectObject("Select " + item.signwindow);
+//sign.push([]);
+while (1){
+	if(jGetWindow("Inventory").getInventories()[0].getItems("stone")[0] == null){
+		var stonefound = true;
+		while(jGetWindow("Inventory").getInventories()[0].freeSlots() != 0 && stonefound == true){
+			var target_stone = jFindObjectByName("items/stone", 25);
+			if(target_stone == null){
+				var stonefound = false;
+			}
+			if(stonefound == true){
+				jPFMoveOffset_LX(target_stone.position(), 1);
+				waitPFEndMove();
+				jDoClick(target_stone.getID(), 3, 0);
+			}
+			else {
+			var rock =  getNearestRock();
+			var rock_coord = rock.position();
+			if ( jIsPathFree(rock_coord) ) {}
+			else {
+				jPFMoveOffset_LX(rock_coord, 2);
+				//waitPFEndMove();
+				}
+			jDoClick(rock.getID(), 3, 0);
+			if (jWaitPopup(actionTimeout)) {
+			jSleep(1000);
+			jSelectContextMenu("Chip stone");
+			jWaitStartProgress();
+			while(jGetWindow("Inventory").getInventories()[0].freeSlots() >1 ){jSleep(100);}
+			jMoveStep(jCoord(0, 2));
+			waitPFEndMove();
+			dropFromCursor(1);
+			drinkWater();
+			} } 
 		}
 	}	
+	jSleep(200);
+	putItemsToSign("stone", sign, item.signwindow, item.radius, item.signval);
+	
 }
-//---------------------------------------------------------------------
-function fillSign() {
-	jSetSpeed(2);
-	while(inv.getItems("stone").length != 0) {
-		var signs = jGetObjects(25, jCoord(0, 0), "sign");
-		jPFClick(signs[s].getID(), 3, 0);
-		while(!jHaveWindow("Milestone")) {jSleep(2500);}
-		if(jHaveWindow("Milestone")) {
-			var inside = jGetBuildValues("Milestone", 1).split("/")[0];
-			jSleep(500);
-			if(inside == 0) {s++;}
-			if(inside != 0) {
-				inv.getItems("stone")[0].transferSuchAll();
-				jSleep(2000);
-				var inside = jGetBuildValues("Milestone", 1).split("/")[0];
-				if(inv.getItems("stone").length == 0) {break;}
-				jSleep(2000);
-				if(inside == 0) {s++;}
-				else {break;}
-			}
-		}
-	}
+                    }
+					
+
+
+function main() {
+	
+   jDropLastWindow();
+   var blist = ["Idol", "Statue", "Mansion", "Milestone", "Exit"];
+   var selectWindow = jGUIWindow(jCoord(250, 250), jCoord(320, blist.length * 25 + 55), "Solaris Stone to Sign");
+   var label = jGUILabel(selectWindow, jCoord(5, 5), "To run this bot, ensure that you are near a boulder or cellar stone(s).");
+   var label = jGUILabel(selectWindow, jCoord(5, 17), "Also have a sign built for the bot to place in the stones.");
+   var label = jGUILabel(selectWindow, jCoord(5, 29), "This bot works best in an clean, open area.");
+   var label = jGUILabel(selectWindow, jCoord(5, 41), "Select sign type to begin:");
+   for(var i = 0; i < blist.length; i++)
+      jGUIButton(selectWindow, jCoord(5, 65 + i*25),  310, blist[i]);
+   selectWindow.toggleCloseButton();
+   var btext = selectWindow.waitButtonClick();
+   if(btext == blist[0]) item = new Idol();
+   if(btext == blist[1]) item = new Statue();
+   if(btext == blist[2]) item = new Mansion();
+   if(btext == blist[3]) item = new Milestone();
+   if(btext == blist[blist.length - 1]) {selectWindow.destroy(); return;}
+   selectWindow.destroy();
+   buildstatue(item);
 }
-//---------------------------------------------------------------------
-function main(){
-	while (true){
-		ChipStones();
-		fillSign();
-	}
-}
-//---------------------------------------------------------------------
+
 main();

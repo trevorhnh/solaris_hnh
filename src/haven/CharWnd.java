@@ -43,6 +43,7 @@ public class CharWnd extends Window {
 	int btime = 0;
 	SkillList psk, nsk;
 	SkillInfo ski;
+	public static ArrayList<SCapVal> sCaps = new ArrayList<SCapVal>();
 	public static FoodMeter foodm;
 	public static Study study;
 	static Map<String, Attr> attrs = new TreeMap<String, Attr>();
@@ -210,6 +211,12 @@ public class CharWnd extends Window {
 			if ((nm == "intel") && study != null) {
 				study.setattnlimit(attr.comp);
 			}
+			for (int i = 0; i < sCaps.size(); i++) {
+				SCapVal scap = sCaps.get(i);
+				if (scap != null) {
+					scap.update();
+				}
+			}
 		}
 	}
 
@@ -341,6 +348,56 @@ public class CharWnd extends Window {
 			tvalc = attr.comp;
 			cost = 0;
 			upd();
+		}
+	}
+
+	class SCapVal {
+		String[] as;
+		boolean sqrt;
+		Label baseLbl;
+		Label totalLbl;
+
+		public SCapVal(int x, int y, String[] as, boolean sqrt)
+		{
+			this.as = as;
+			this.sqrt = sqrt;
+
+			baseLbl = new Label(new Coord(x += 75, y), cattr, "");
+			baseLbl.setcolor(Color.WHITE);
+
+			totalLbl = new Label(new Coord(x += 35, y), cattr, "");
+			totalLbl.setcolor(buff);
+
+			update();
+		}
+
+		public void update()
+		{
+			int baseVal = 1;
+			int totalVal = 1;
+			for (int i = 0; i < as.length; i++)
+			{
+				// Values
+				baseVal *= getStat(as[i]);
+				totalVal *= getStatTotal(as[i]);
+			}
+
+			if (sqrt) {
+				baseVal = (int) Math.round(Math.sqrt(baseVal));
+				totalVal = (int) Math.round(Math.sqrt(totalVal));
+			}
+
+			baseLbl.settext("" + baseVal);
+
+			// Show total value (if necessary)
+			if (baseVal != totalVal)
+			{
+				totalLbl.settext("" + totalVal);
+			}
+			else
+			{
+				totalLbl.settext("");
+			}
 		}
 	}
 
@@ -779,8 +836,24 @@ public class CharWnd extends Window {
 		new SAttr(id, 320, y);
 	}
 
+	private SCapVal softcapval(int y, String[] as, String nm, boolean sqrt)
+	{
+		int x = 25;
+
+		for (int i = 0; i < as.length; i++)
+		{
+			// Icons
+			Img tx = new Img(new Coord(x - (15 * i), y), Resource.loadtex("gfx/hud/charsh/" + as[i]), cattr);
+		}
+
+		// Name
+		new Label(new Coord(x += 15, y), cattr, nm + ":");
+
+		return new SCapVal(x, y, as, sqrt);
+	}
+
 	public CharWnd(Coord c, Widget parent, int studyid) {
-		super(c, new Coord(400, 340), parent, "Character Sheet");
+		super(c, new Coord(400, 400), parent, "Character Sheet");
 		ui.wnd_char = this;
 		int y;
 		cattr = new Widget(Coord.z, new Coord(400, 300), this);
@@ -794,7 +867,7 @@ public class CharWnd extends Window {
 		baseval(y += 15, "csm", "Charisma");
 		baseval(y += 15, "dxt", "Dexterity");
 		baseval(y += 15, "psy", "Psyche");
-		foodm = new FoodMeter(new Coord(10, 180), cattr);
+		foodm = new FoodMeter(new Coord(10, 310), cattr);
 
 		int expbase = 220;
 		new Label(new Coord(210, expbase), cattr, "Cost:");
@@ -842,6 +915,16 @@ public class CharWnd extends Window {
 		skillval(y += 15, "cooking", "Cooking");
 		skillval(y += 15, "farming", "Farming");
 		skillval(y += 15, "survive", "Survival");
+
+		y = 170;
+		sCaps = new ArrayList<SCapVal>();
+		sCaps.add(softcapval(y, new String[]{"perc", "explore"}, "Sight", false)); // Perc x Exp
+		sCaps.add(softcapval(y += 15, new String[]{"perc", "cooking"}, "Baking", true));   // Perc x Cooking
+		sCaps.add(softcapval(y += 15, new String[]{"psy", "smithing"}, "Goldsmithing", true)); // Psy x Smith
+		sCaps.add(softcapval(y += 15, new String[]{"str", "smithing"}, "Metalworking", true)); // Str x Smith
+		sCaps.add(softcapval(y += 15, new String[]{"intel", "stealth"}, "Evasion", true)); // Int x Stealth
+		sCaps.add(softcapval(y += 15, new String[]{"dxt", "sewing"}, "Weaving", true)); // Dex x Sewing
+		sCaps.add(softcapval(y += 15, new String[]{"psy", "sewing"}, "Psycrafting", true)); // Psy x Sewing
 
 		skill = new Widget(Coord.z, new Coord(400, 275), this);
 		ski = new SkillInfo(new Coord(10, 10), new Coord(180, 260), skill);
@@ -895,7 +978,7 @@ public class CharWnd extends Window {
 			ui.bind(study, studyid);
 
 		int bx = 10;
-		new IButton(new Coord(bx, 310), this,
+		new IButton(new Coord(245, 310), this,
 				Resource.loadimg("gfx/hud/charsh/attribup"),
 				Resource.loadimg("gfx/hud/charsh/attribdown")) {
 			public void click() {
@@ -906,7 +989,7 @@ public class CharWnd extends Window {
 			}
 		}.tooltip = "Attributes";
 		if (studyid >= 0) {
-			new IButton(new Coord(bx += 70, 310), this,
+			new IButton(new Coord(245, 350), this,
 					Resource.loadimg("gfx/hud/charsh/ideasup"),
 					Resource.loadimg("gfx/hud/charsh/ideasdown")) {
 				public void click() {
@@ -917,7 +1000,7 @@ public class CharWnd extends Window {
 				}
 			}.tooltip = "Study";
 		}
-		new IButton(new Coord(bx += 70, 310), this,
+		new IButton(new Coord(310, 350), this,
 				Resource.loadimg("gfx/hud/charsh/skillsup"),
 				Resource.loadimg("gfx/hud/charsh/skillsdown")) {
 			public void click() {
@@ -927,7 +1010,7 @@ public class CharWnd extends Window {
 				study.visible = false;
 			}
 		}.tooltip = "Skills";
-		new IButton(new Coord(bx += 70, 310), this,
+		new IButton(new Coord(310, 310), this,
 				Resource.loadimg("gfx/hud/charsh/worshipup"),
 				Resource.loadimg("gfx/hud/charsh/worshipdown")) {
 			public void click() {
@@ -998,7 +1081,15 @@ public class CharWnd extends Window {
 		}
 		return ret;
 	}
-
+	public static int getStatTotal(String name) {
+		int ret = 0;
+		for (Attr attr : attrs.values()) {
+			if (attr.attr.nm.equals(name)) {
+				ret = attr.attr.comp;
+			}
+		}
+		return ret;
+	}
 	public void uimsg(String msg, Object... args) {
 		if (msg == "exp") {
 			exp = (Integer) args[0];

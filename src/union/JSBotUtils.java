@@ -1054,4 +1054,8 @@ public class JSBotUtils {
 	public static double getCurrentFepCap() {
 		return ((double) CharWnd.foodm.getCap() / 10);
 	}
+
+	public static int getStatTotal(String n) {
+		return CharWnd.getStatTotal(n);
+	}
 }

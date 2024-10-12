@@ -1517,7 +1517,7 @@ public class JSHaven {
 	 * @return версия клиента
 	 */
 	public static String jGetVersion() {
-		return MainFrame.hhVersion;
+		return MainFrame.clientVersion;
 	}
 	
 	/**
@@ -1611,6 +1611,21 @@ public class JSHaven {
 	 */
 	public static int jGetStatByName(String name) {
 		return JSBotUtils.getStat(name);
+	}
+
+	/**
+	 * Returns the value of the specified stat (with buffs).
+	 *
+	 * @param String name - The name of the stat. Possible values:
+	 * FEPs: "str", "agil", "intel", "cons", "perc", "csm", "dxt", "psy"
+	 * Skills: "unarmed", "melee", "ranged", "explore", "stealth", "sewing", "smithing", "carpentry", "cooking", "farming", "survive"
+	 * Beliefs: "life", "night", "civil", "nature", "martial", "change"
+	 * LA: "expmod"
+	 * @return An {@code Integer} representing the current total value of the stat, or {@code 0} if not found.
+	 */
+
+	public static int jGetStatTotalByName(String name) {
+		return JSBotUtils.getStatTotal(name);
 	}
 	
 }//Static haven

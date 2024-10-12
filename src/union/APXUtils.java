@@ -442,7 +442,7 @@ public class APXUtils {
 					}
 				});
 		equipElement = new MenuElement(null, new String[] {CustomMenu.menu_prefix, "equip_listener"}, equipRes,
-				"Equipment", "Open Equipment Window", 'E', "equipbtn");
+				"Equipment", "Open Equipment Window", 'Q', "equipbtn");
 		equipElement.SetListener(new MenuElemetUseListener(null) {
 					public void use(int button) {
 						if (button == 1) {

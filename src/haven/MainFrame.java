@@ -37,7 +37,7 @@ import union.JSBot;
 
 @SuppressWarnings("serial")
 public class MainFrame extends Frame implements Runnable, FSMan {
-	public static final String clientVersion = "- build (9.7.2024)";
+	public static final String clientVersion = "- build (10.08.2024)";
 	public static final String clientTitle = "Solaris Client " + clientVersion;
 	public static HavenPanel havenPanel;
 	ThreadGroup g;

@@ -51,7 +51,7 @@ public class MenuGrid extends Window {
 	public final static Resource menu_back_to_previous = Resource.load("gfx/hud/sc-back");
 	public final static RichText.Foundry ttfnd = new RichText.Foundry(
 			TextAttribute.FAMILY, "SansSerif", TextAttribute.SIZE, 10);
-	private static Coord gsz = new Coord(4, 4);//grid size (slots: columns, rows)
+	private static Coord gsz = new Coord(5, 5);//grid size (slots: columns, rows)
 	private Resource menu_current_parent_resource, pressed, dragging,
 			layout[][] = new Resource[200][200];
 	private int menu_current_layer_elements_offset = 0;
@@ -129,6 +129,8 @@ public class MenuGrid extends Window {
 		oldSize = this.sz;
 		recalcSize(this.sz);
 		fbtn.c.x = this.sz.x - 38;
+		setSize(new Coord(183, 152
+		));
 		if(Config.toggleCA)
 			JSBotUtils.sendAction("crime");
 		/* Load Toolbars */
@@ -282,7 +284,7 @@ public class MenuGrid extends Window {
 	Resource right_click_pressed = null;
 	public boolean mousedown(Coord c, int button) {
 		if(folded) {
-			//recalcSize(this.sz);
+			recalcSize(this.sz);
 		    return super.mousedown(c, button);
 		}
 		parent.setfocus(this);
@@ -539,5 +541,10 @@ public class MenuGrid extends Window {
 			return (true);
 		}
 		return (false);
+	}
+	public void setSize(Coord newSize) {
+		this.sz = newSize; // Update the size
+		recalcSize(newSize); // Recalculate sizes/layouts if needed
+		updlayout(); // Update the layout
 	}
 }
